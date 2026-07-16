@@ -112,6 +112,33 @@ export async function login(email: string, senha: string): Promise<void> {
 }
 
 export const me = () => req<Usuario>("/auth/me");
+
+// ---- Administração (usuários + organização) ----
+export interface UsuarioAdmin {
+  id: string; nome: string; email: string; papel: string; ativo: boolean; fazenda_ids: string[];
+}
+export interface Organizacao { id: string; nome: string; slug: string; }
+export const getUsuarios = () => req<UsuarioAdmin[]>("/admin/usuarios");
+export const criarUsuario = (body: {
+  nome: string; email: string; senha: string; papel: string; fazenda_ids: string[];
+}) => req<UsuarioAdmin>("/admin/usuarios", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
+export const editarUsuario = (id: string, body: Partial<{
+  nome: string; papel: string; ativo: boolean; fazenda_ids: string[];
+}>) => req<UsuarioAdmin>(`/admin/usuarios/${id}`, {
+  method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
+export const resetarSenha = (id: string, senha: string) =>
+  req<void>(`/admin/usuarios/${id}/senha`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha }),
+  });
+export const excluirUsuario = (id: string) => req<void>(`/admin/usuarios/${id}`, { method: "DELETE" });
+export const getOrganizacao = () => req<Organizacao>("/admin/organizacao");
+export const editarOrganizacao = (nome: string) =>
+  req<Organizacao>("/admin/organizacao", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome }),
+  });
 export const getDashboard = () => req<Dashboard>("/dashboard");
 export const getPainelFazenda = (id: string) => req<FazendaPainel>(`/dashboard/fazenda/${id}`);
 

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.api.routers import (
+    admin,
     alertas,
     auth,
     dashboard,
@@ -37,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(fazendas.router)
 app.include_router(dashboard.router)
 app.include_router(alertas.router)

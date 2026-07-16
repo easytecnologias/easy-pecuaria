@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { LogOut, RefreshCw, Plus, Menu } from "lucide-vue-next";
-import { clearToken } from "../api";
+import { clearToken, me } from "../api";
 
 defineProps<{ title: string; sub?: string }>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -12,6 +12,11 @@ const router = useRouter();
 
 const menuAberto = ref(false);
 watch(() => route.fullPath, () => { menuAberto.value = false; });
+
+// papel do usuário logado — para exibir itens só de administrador
+const papel = ref("");
+const ehAdmin = computed(() => papel.value === "admin" || papel.value === "direcao");
+onMounted(async () => { try { papel.value = (await me()).papel; } catch { /* ignora */ } });
 
 // menu agrupado por propósito — cada categoria com sua função clara
 const grupos = [
@@ -63,9 +68,17 @@ const grupos = [
     itens: [
       { to: "/fazendas", label: "Fazendas", emoji: "🏡", match: ["/fazendas"] },
       { to: "/metas", label: "Metas", emoji: "🎯" },
+      { to: "/admin", label: "Administração", emoji: "⚙️", adminOnly: true },
     ],
   },
 ];
+
+// esconde itens adminOnly de quem não é admin/direção
+const gruposVisiveis = computed(() =>
+  grupos
+    .map((g) => ({ ...g, itens: g.itens.filter((i) => !("adminOnly" in i && i.adminOnly) || ehAdmin.value) }))
+    .filter((g) => g.itens.length)
+);
 
 function ativo(item: { to: string; match?: string[] }) {
   if (route.path === item.to) return true;
@@ -90,7 +103,7 @@ function sair() {
         </div>
       </div>
       <nav class="nav">
-        <template v-for="g in grupos" :key="g.titulo">
+        <template v-for="g in gruposVisiveis" :key="g.titulo">
           <div class="nav__group">{{ g.titulo }}</div>
           <RouterLink
             v-for="item in g.itens"

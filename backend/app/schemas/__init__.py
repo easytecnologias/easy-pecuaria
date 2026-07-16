@@ -601,3 +601,42 @@ class ResumoEscore(BaseModel):
     gordas: int
     pct_ideais: float | None
     historico: list[EscoreHistItem]
+
+
+class UsuarioAdminOut(BaseModel):
+    id: uuid.UUID
+    nome: str
+    email: str
+    papel: str
+    ativo: bool
+    fazenda_ids: list[uuid.UUID]
+
+
+class UsuarioCreateIn(BaseModel):
+    nome: str
+    email: str
+    senha: str
+    papel: str = "gerente"
+    fazenda_ids: list[uuid.UUID] = []
+
+
+class UsuarioUpdateIn(BaseModel):
+    nome: str | None = None
+    papel: str | None = None
+    ativo: bool | None = None
+    fazenda_ids: list[uuid.UUID] | None = None
+
+
+class SenhaResetIn(BaseModel):
+    senha: str
+
+
+class OrganizacaoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    nome: str
+    slug: str
+
+
+class OrganizacaoUpdateIn(BaseModel):
+    nome: str
