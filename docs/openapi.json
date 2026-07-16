@@ -1,0 +1,1295 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Pecuaria API",
+        "description": "Backend do sistema de gestao pecuaria (multi-fazenda) \u00e2\u20ac\u201d painel + motor de gatilhos.",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "description": "Login via form (username = email). Retorna JWT.",
+                "operationId": "login_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_login_auth_login_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenOut"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Me",
+                "operationId": "me_auth_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioOut"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/fazendas": {
+            "get": {
+                "tags": [
+                    "fazendas"
+                ],
+                "summary": "Listar Fazendas",
+                "operationId": "listar_fazendas_fazendas_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/FazendaOut"
+                                    },
+                                    "type": "array",
+                                    "title": "Response Listar Fazendas Fazendas Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/fazendas/{fazenda_id}/parametros": {
+            "get": {
+                "tags": [
+                    "fazendas"
+                ],
+                "summary": "Parametros Da Fazenda",
+                "operationId": "parametros_da_fazenda_fazendas__fazenda_id__parametros_get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ParametroOut"
+                                    },
+                                    "title": "Response Parametros Da Fazenda Fazendas  Fazenda Id  Parametros Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/fazendas/{fazenda_id}/parametros/{chave}": {
+            "put": {
+                "tags": [
+                    "fazendas"
+                ],
+                "summary": "Atualizar Parametro",
+                "operationId": "atualizar_parametro_fazendas__fazenda_id__parametros__chave__put",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    },
+                    {
+                        "name": "chave",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Chave"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ParametroUpdateIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ParametroOut"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard": {
+            "get": {
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Dashboard Consolidado",
+                "description": "Painel consolidado do grupo + cartoes por fazenda (no escopo do usuario).",
+                "operationId": "dashboard_consolidado_dashboard_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardOut"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/dashboard/fazenda/{fazenda_id}": {
+            "get": {
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Painel Fazenda",
+                "operationId": "painel_fazenda_dashboard_fazenda__fazenda_id__get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FazendaPainelOut"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/alertas": {
+            "get": {
+                "tags": [
+                    "alertas"
+                ],
+                "summary": "Listar Alertas",
+                "description": "Alertas de todas as fazendas no escopo do usuario, mais severos primeiro.",
+                "operationId": "listar_alertas_alertas_get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "apenas_abertos",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true,
+                            "title": "Apenas Abertos"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AlertaOut"
+                                    },
+                                    "title": "Response Listar Alertas Alertas Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/alertas/reavaliar/{fazenda_id}": {
+            "post": {
+                "tags": [
+                    "alertas"
+                ],
+                "summary": "Reavaliar Fazenda",
+                "description": "Roda o motor de gatilhos para a fazenda e retorna os alertas abertos resultantes.",
+                "operationId": "reavaliar_fazenda_alertas_reavaliar__fazenda_id__post",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AlertaOut"
+                                    },
+                                    "title": "Response Reavaliar Fazenda Alertas Reavaliar  Fazenda Id  Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/indicadores": {
+            "get": {
+                "tags": [
+                    "indicadores"
+                ],
+                "summary": "Catalogo Indicadores",
+                "operationId": "catalogo_indicadores_indicadores_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/IndicadorOut"
+                                    },
+                                    "type": "array",
+                                    "title": "Response Catalogo Indicadores Indicadores Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/fazendas/{fazenda_id}/indicadores/valores": {
+            "post": {
+                "tags": [
+                    "indicadores"
+                ],
+                "summary": "Lancar Valor",
+                "description": "Lanca (ou atualiza) o valor de um indicador na fazenda e reavalia os gatilhos.",
+                "operationId": "lancar_valor_fazendas__fazenda_id__indicadores_valores_post",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValorIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Lancar Valor Fazendas  Fazenda Id  Indicadores Valores Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/fazendas/{fazenda_id}/indicadores/{codigo}/serie": {
+            "get": {
+                "tags": [
+                    "indicadores"
+                ],
+                "summary": "Serie Indicador",
+                "description": "Serie temporal de um indicador (para graficos de tendencia).",
+                "operationId": "serie_indicador_fazendas__fazenda_id__indicadores__codigo__serie_get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fazenda_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Fazenda Id"
+                        }
+                    },
+                    {
+                        "name": "codigo",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Codigo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    },
+                                    "title": "Response Serie Indicador Fazendas  Fazenda Id  Indicadores  Codigo  Serie Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "infra"
+                ],
+                "summary": "Health",
+                "description": "Liveness + checa conexao com o banco.",
+                "operationId": "health_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Health Health Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AlertaOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "fazenda_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Fazenda Id"
+                    },
+                    "indicador_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Indicador Id"
+                    },
+                    "severidade": {
+                        "$ref": "#/components/schemas/Severidade"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "valor_observado": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Valor Observado"
+                    },
+                    "valor_referencia": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Valor Referencia"
+                    },
+                    "mensagem": {
+                        "type": "string",
+                        "title": "Mensagem"
+                    },
+                    "acao": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Acao"
+                    },
+                    "avaliado_em": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Avaliado Em"
+                    },
+                    "resolvido_em": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Resolvido Em"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "fazenda_id",
+                    "indicador_id",
+                    "severidade",
+                    "status",
+                    "valor_observado",
+                    "valor_referencia",
+                    "mensagem",
+                    "acao",
+                    "avaliado_em",
+                    "resolvido_em"
+                ],
+                "title": "AlertaOut"
+            },
+            "Body_login_auth_login_post": {
+                "properties": {
+                    "grant_type": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "pattern": "password"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Grant Type"
+                    },
+                    "username": {
+                        "type": "string",
+                        "title": "Username"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "title": "Scope",
+                        "default": ""
+                    },
+                    "client_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Client Id"
+                    },
+                    "client_secret": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Client Secret"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "title": "Body_login_auth_login_post"
+            },
+            "DashboardOut": {
+                "properties": {
+                    "organizacao": {
+                        "type": "string",
+                        "title": "Organizacao"
+                    },
+                    "resumo": {
+                        "$ref": "#/components/schemas/ResumoDashboard"
+                    },
+                    "fazendas": {
+                        "items": {
+                            "$ref": "#/components/schemas/FazendaPainelOut"
+                        },
+                        "type": "array",
+                        "title": "Fazendas"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "organizacao",
+                    "resumo",
+                    "fazendas"
+                ],
+                "title": "DashboardOut"
+            },
+            "FazendaOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "title": "Nome"
+                    },
+                    "municipio": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Municipio"
+                    },
+                    "uf": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Uf"
+                    },
+                    "ativo": {
+                        "type": "boolean",
+                        "title": "Ativo"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "nome",
+                    "municipio",
+                    "uf",
+                    "ativo"
+                ],
+                "title": "FazendaOut"
+            },
+            "FazendaPainelOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "title": "Nome"
+                    },
+                    "municipio": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Municipio"
+                    },
+                    "uf": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Uf"
+                    },
+                    "alertas_abertos": {
+                        "type": "integer",
+                        "title": "Alertas Abertos"
+                    },
+                    "por_severidade": {
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "type": "object",
+                        "title": "Por Severidade"
+                    },
+                    "indicadores": {
+                        "items": {
+                            "$ref": "#/components/schemas/IndicadorPainelOut"
+                        },
+                        "type": "array",
+                        "title": "Indicadores"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "nome",
+                    "municipio",
+                    "uf",
+                    "alertas_abertos",
+                    "por_severidade",
+                    "indicadores"
+                ],
+                "title": "FazendaPainelOut"
+            },
+            "FormatoIndicador": {
+                "type": "string",
+                "enum": [
+                    "numero",
+                    "percentual",
+                    "moeda",
+                    "dias"
+                ],
+                "title": "FormatoIndicador"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "IndicadorOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "codigo": {
+                        "type": "string",
+                        "title": "Codigo"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "title": "Nome"
+                    },
+                    "categoria": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Categoria"
+                    },
+                    "unidade": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Unidade"
+                    },
+                    "formato": {
+                        "$ref": "#/components/schemas/FormatoIndicador"
+                    },
+                    "casas_decimais": {
+                        "type": "integer",
+                        "title": "Casas Decimais"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "codigo",
+                    "nome",
+                    "categoria",
+                    "unidade",
+                    "formato",
+                    "casas_decimais"
+                ],
+                "title": "IndicadorOut"
+            },
+            "IndicadorPainelOut": {
+                "properties": {
+                    "codigo": {
+                        "type": "string",
+                        "title": "Codigo"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "title": "Nome"
+                    },
+                    "categoria": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Categoria"
+                    },
+                    "unidade": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Unidade"
+                    },
+                    "formato": {
+                        "$ref": "#/components/schemas/FormatoIndicador"
+                    },
+                    "casas_decimais": {
+                        "type": "integer",
+                        "title": "Casas Decimais"
+                    },
+                    "valor": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Valor"
+                    },
+                    "data_ref": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data Ref"
+                    },
+                    "situacao": {
+                        "$ref": "#/components/schemas/Severidade"
+                    },
+                    "referencia": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Referencia"
+                    },
+                    "acao": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Acao"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "codigo",
+                    "nome",
+                    "categoria",
+                    "unidade",
+                    "formato",
+                    "casas_decimais",
+                    "valor",
+                    "data_ref",
+                    "situacao",
+                    "referencia",
+                    "acao"
+                ],
+                "title": "IndicadorPainelOut"
+            },
+            "ParametroOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "grupo": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Grupo"
+                    },
+                    "chave": {
+                        "type": "string",
+                        "title": "Chave"
+                    },
+                    "rotulo": {
+                        "type": "string",
+                        "title": "Rotulo"
+                    },
+                    "valor": {
+                        "type": "number",
+                        "title": "Valor"
+                    },
+                    "unidade": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Unidade"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "grupo",
+                    "chave",
+                    "rotulo",
+                    "valor",
+                    "unidade"
+                ],
+                "title": "ParametroOut"
+            },
+            "ParametroUpdateIn": {
+                "properties": {
+                    "valor": {
+                        "type": "number",
+                        "title": "Valor"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "valor"
+                ],
+                "title": "ParametroUpdateIn"
+            },
+            "ResumoDashboard": {
+                "properties": {
+                    "fazendas": {
+                        "type": "integer",
+                        "title": "Fazendas"
+                    },
+                    "alertas_abertos": {
+                        "type": "integer",
+                        "title": "Alertas Abertos"
+                    },
+                    "por_severidade": {
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "type": "object",
+                        "title": "Por Severidade"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "fazendas",
+                    "alertas_abertos",
+                    "por_severidade"
+                ],
+                "title": "ResumoDashboard"
+            },
+            "Severidade": {
+                "type": "string",
+                "enum": [
+                    "OK",
+                    "REVISAR",
+                    "AVALIAR",
+                    "ALERTA",
+                    "CRITICO"
+                ],
+                "title": "Severidade"
+            },
+            "TokenOut": {
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "title": "Token Type",
+                        "default": "bearer"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "access_token"
+                ],
+                "title": "TokenOut"
+            },
+            "UsuarioOut": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "title": "Nome"
+                    },
+                    "email": {
+                        "type": "string",
+                        "title": "Email"
+                    },
+                    "papel": {
+                        "type": "string",
+                        "title": "Papel"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "nome",
+                    "email",
+                    "papel"
+                ],
+                "title": "UsuarioOut"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "ValorIn": {
+                "properties": {
+                    "indicador_codigo": {
+                        "type": "string",
+                        "title": "Indicador Codigo"
+                    },
+                    "valor": {
+                        "type": "number",
+                        "title": "Valor"
+                    },
+                    "data_ref": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data Ref"
+                    },
+                    "observacao": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Observacao"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "indicador_codigo",
+                    "valor"
+                ],
+                "title": "ValorIn"
+            }
+        },
+        "securitySchemes": {
+            "OAuth2PasswordBearer": {
+                "type": "oauth2",
+                "flows": {
+                    "password": {
+                        "scopes": {},
+                        "tokenUrl": "/auth/login"
+                    }
+                }
+            }
+        }
+    }
+}
