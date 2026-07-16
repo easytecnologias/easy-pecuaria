@@ -31,14 +31,20 @@ a { color: inherit; text-decoration: none; }
   width: 232px; flex-shrink: 0; background: var(--sidebar); color: #e8f0f2;
   display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
 }
-.sidebar__brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 14px; }
+.sidebar__brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 14px; flex-shrink: 0; }
 .sidebar__logo {
   width: 34px; height: 34px; border-radius: 9px; background: var(--primary);
   display: grid; place-items: center; font-weight: 800; color: #04241a;
 }
 .sidebar__title { font-weight: 700; font-size: 15px; line-height: 1.1; }
 .sidebar__sub { font-size: 11px; color: var(--sidebar-muted); }
-.nav { padding: 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav { padding: 8px; display: flex; flex-direction: column; gap: 2px; flex: 1;
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* scrollbar discreta no tema escuro do sidebar */
+.nav::-webkit-scrollbar { width: 8px; }
+.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 8px; }
+.nav::-webkit-scrollbar-track { background: transparent; }
+.nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
 .nav__group { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--sidebar-muted); padding: 14px 12px 6px; }
 .nav__item {
@@ -47,7 +53,7 @@ a { color: inherit; text-decoration: none; }
 }
 .nav__item:hover { background: rgba(255,255,255,.05); }
 .nav__item.active { background: var(--sidebar-active); color: #fff; border-left-color: var(--primary); }
-.sidebar__footer { padding: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+.sidebar__footer { padding: 10px; border-top: 1px solid rgba(255,255,255,.07); flex-shrink: 0; }
 
 .main-area { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar {

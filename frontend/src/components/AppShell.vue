@@ -13,7 +13,7 @@ const router = useRouter();
 const menuAberto = ref(false);
 watch(() => route.fullPath, () => { menuAberto.value = false; });
 
-// menu agrupado por proposito: monitorar / operar / configurar
+// menu agrupado por propósito — cada categoria com sua função clara
 const grupos = [
   {
     titulo: "Início",
@@ -23,19 +23,39 @@ const grupos = [
     ],
   },
   {
-    titulo: "Operação",
+    titulo: "Rebanho",
     itens: [
-      { to: "/registrar", label: "Registrar dados", emoji: "⚖️" },
       { to: "/rebanho", label: "Rebanho", emoji: "🐂", match: ["/rebanho", "/animais"] },
+      { to: "/registrar", label: "Registrar dados", emoji: "⚖️" },
+      { to: "/movimentacao", label: "Movimentação", emoji: "↔️" },
+    ],
+  },
+  {
+    titulo: "Reprodução",
+    itens: [
       { to: "/reproducao", label: "Reprodução", emoji: "🧬" },
       { to: "/partos", label: "Partos", emoji: "🐣" },
+    ],
+  },
+  {
+    titulo: "Saúde",
+    itens: [
       { to: "/sanitario", label: "Sanitário", emoji: "💉" },
-      { to: "/movimentacao", label: "Movimentação", emoji: "↔️" },
+      { to: "/escore", label: "Escore corporal", emoji: "📏" },
+    ],
+  },
+  {
+    titulo: "Nutrição",
+    itens: [
       { to: "/nutricao", label: "Nutrição", emoji: "🥗" },
-      { to: "/escore", label: "Escore corporal", emoji: "⚖️" },
       { to: "/estoque", label: "Estoque", emoji: "🌽" },
-      { to: "/mercado", label: "Mercado", emoji: "💰" },
+    ],
+  },
+  {
+    titulo: "Financeiro",
+    itens: [
       { to: "/financeiro", label: "Financeiro", emoji: "💵" },
+      { to: "/mercado", label: "Mercado", emoji: "💰" },
     ],
   },
   {
