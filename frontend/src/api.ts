@@ -81,7 +81,10 @@ export interface SeriePonto {
 const TOKEN_KEY = "pecuaria_token";
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t);
-export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+// cache do usuário logado + throttle do refresh (evita chamadas a cada navegação)
+let _meCache: Usuario | null = null;
+let _lastRefresh = 0;
+export const clearToken = () => { localStorage.removeItem(TOKEN_KEY); _meCache = null; _lastRefresh = 0; invalidarFazendas(); };
 
 async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -110,9 +113,21 @@ export async function login(email: string, senha: string): Promise<void> {
   if (!res.ok) throw new Error("Email ou senha inválidos");
   const data = (await res.json()) as { access_token: string };
   setToken(data.access_token);
+  _meCache = null; _lastRefresh = Date.now(); invalidarFazendas();  // novo login: reseta caches
 }
 
 export const me = () => req<Usuario>("/auth/me");
+// versão cacheada: busca /auth/me só uma vez por sessão (usada na navegação)
+export async function getMeCached(): Promise<Usuario> {
+  if (!_meCache) _meCache = await me();
+  return _meCache;
+}
+// renova o token no máximo 1x a cada 5 min (em vez de a cada navegação)
+export async function refreshTokenThrottled(): Promise<void> {
+  if (Date.now() - _lastRefresh < 5 * 60 * 1000) return;
+  _lastRefresh = Date.now();
+  await refreshToken();
+}
 
 export const trocarMinhaSenha = (senha_atual: string, senha_nova: string) =>
   req<void>("/auth/senha", {
@@ -175,17 +190,30 @@ export const getPainelFazenda = (id: string) => req<FazendaPainel>(`/dashboard/f
 export interface MesEvolucao { periodo: string; label: string; ano: string; nascimentos: number; }
 export interface EvolucaoRebanho { meses: MesEvolucao[]; total_nascimentos_12m: number; total_ativos: number; }
 export const getEvolucaoRebanho = () => req<EvolucaoRebanho>("/dashboard/evolucao");
-export const getFazendas = () => req<Fazenda[]>("/fazendas");
-export const criarFazenda = (body: { nome: string; municipio?: string; uf?: string }) =>
-  req<Fazenda>("/fazendas", {
+// lista de fazendas cacheada (usada em quase toda tela; muda raramente).
+// invalida ao criar/editar/excluir fazenda e no login/logout.
+let _fazendasCache: Fazenda[] | null = null;
+export function invalidarFazendas() { _fazendasCache = null; }
+export async function getFazendas(): Promise<Fazenda[]> {
+  if (!_fazendasCache) _fazendasCache = await req<Fazenda[]>("/fazendas");
+  return _fazendasCache;
+}
+export const criarFazenda = (body: { nome: string; municipio?: string; uf?: string }) => {
+  invalidarFazendas();
+  return req<Fazenda>("/fazendas", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
-export const atualizarFazenda = (id: string, body: { nome?: string; municipio?: string; uf?: string }) =>
-  req<Fazenda>(`/fazendas/${id}`, {
+};
+export const atualizarFazenda = (id: string, body: { nome?: string; municipio?: string; uf?: string }) => {
+  invalidarFazendas();
+  return req<Fazenda>(`/fazendas/${id}`, {
     method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
-export const excluirFazenda = (id: string) =>
-  req<void>(`/fazendas/${id}`, { method: "DELETE" });
+};
+export const excluirFazenda = (id: string) => {
+  invalidarFazendas();
+  return req<void>(`/fazendas/${id}`, { method: "DELETE" });
+};
 export const getAlertas = (apenasAbertos = true) =>
   req<Alerta[]>(`/alertas?apenas_abertos=${apenasAbertos}`);
 export const getParametros = (id: string) => req<Parametro[]>(`/fazendas/${id}/parametros`);

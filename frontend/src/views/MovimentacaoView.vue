@@ -43,7 +43,7 @@ async function init() {
   const sede = fazendas.value.find((f) => f.nome.includes("Sede")) ?? fazendas.value[0];
   if (sede) { fazendaId.value = sede.id; await carregar(); }
 }
-watch(fazendaId, carregar);
+watch(fazendaId, (_v, old) => { if (old) carregar(); });
 onMounted(init);
 
 const ativos = computed(() => animais.value.filter((a) => a.status === "ativo"));

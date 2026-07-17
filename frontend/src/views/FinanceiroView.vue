@@ -44,7 +44,7 @@ async function init() {
   fazendas.value = await getFazendas();
   if (fazendas.value[0]) { fazendaId.value = fazendas.value[0].id; await carregar(); }
 }
-watch(fazendaId, carregar);
+watch(fazendaId, (_v, old) => { if (old) carregar(); });
 onMounted(init);
 
 const modal = ref(false);

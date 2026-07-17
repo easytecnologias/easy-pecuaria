@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { LogOut, RefreshCw, Plus, Menu, KeyRound } from "lucide-vue-next";
-import { clearToken, me, trocarMinhaSenha, refreshToken } from "../api";
+import { clearToken, getMeCached, trocarMinhaSenha, refreshTokenThrottled } from "../api";
 import Modal from "./Modal.vue";
 
 defineProps<{ title: string; sub?: string }>();
@@ -19,9 +19,9 @@ const papel = ref("");
 const superadmin = ref(false);
 const ehAdmin = computed(() => papel.value === "admin" || papel.value === "direcao");
 onMounted(async () => {
-  try { const u = await me(); papel.value = u.papel; superadmin.value = !!u.is_superadmin; }
+  try { const u = await getMeCached(); papel.value = u.papel; superadmin.value = !!u.is_superadmin; }
   catch { /* ignora */ }
-  refreshToken().catch(() => { /* sessão desliza silenciosamente */ });
+  refreshTokenThrottled().catch(() => { /* sessão desliza silenciosamente */ });
 });
 
 // troca da própria senha (auto-serviço)
