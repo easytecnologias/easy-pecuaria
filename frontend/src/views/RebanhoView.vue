@@ -51,6 +51,30 @@ function selecionarLote(l: Lote) {
     : todos.value.filter((a) => a.lote_id === l.id);
 }
 
+// ---- busca e filtros (varrem todo o rebanho da fazenda) ----
+const busca = ref("");
+const fCategoria = ref("todas");
+const fSexo = ref("todos");
+const fStatus = ref("todos");
+const categorias = computed(() =>
+  [...new Set(todos.value.map((a) => a.categoria).filter(Boolean))].sort() as string[]
+);
+const filtrando = computed(() =>
+  busca.value.trim() !== "" || fCategoria.value !== "todas" || fSexo.value !== "todos" || fStatus.value !== "todos"
+);
+const nomeLoteDe = (id: string | null) => (id ? lotes.value.find((l) => l.id === id)?.nome ?? "—" : "Sem lote");
+const animaisMostrados = computed(() => {
+  if (!filtrando.value) return animais.value;
+  const q = busca.value.trim().toLowerCase();
+  return todos.value.filter((a) =>
+    (!q || a.brinco.toLowerCase().includes(q)) &&
+    (fCategoria.value === "todas" || a.categoria === fCategoria.value) &&
+    (fSexo.value === "todos" || a.sexo === fSexo.value) &&
+    (fStatus.value === "todos" || a.status === fStatus.value)
+  );
+});
+function limparFiltros() { busca.value = ""; fCategoria.value = "todas"; fSexo.value = "todos"; fStatus.value = "todos"; }
+
 async function carregarDados() {
   if (!fazendaId.value) return;
   erro.value = "";
@@ -170,19 +194,39 @@ async function removerLote(l: Lote, ev: Event) {
         </div>
       </Panel>
 
-      <Panel :title="loteSel?.nome ?? 'Animais'" sub="animais do lote">
+      <Panel :title="filtrando ? `Resultados (${animaisMostrados.length})` : (loteSel?.nome ?? 'Animais')"
+             :sub="filtrando ? 'busca em todo o rebanho' : 'animais do lote'">
+        <template #actions>
+          <button v-if="filtrando" class="btn btn--secondary" style="height:32px" @click="limparFiltros">Limpar</button>
+        </template>
+        <div class="filtros">
+          <input class="input busca" v-model="busca" placeholder="🔎 Buscar por brinco…" />
+          <select class="input selm" v-model="fCategoria">
+            <option value="todas">Categoria: todas</option>
+            <option v-for="c in categorias" :key="c" :value="c">{{ c }}</option>
+          </select>
+          <select class="input selm" v-model="fSexo">
+            <option value="todos">Sexo: todos</option><option value="F">Fêmea</option><option value="M">Macho</option>
+          </select>
+          <select class="input selm" v-model="fStatus">
+            <option value="todos">Status: todos</option><option value="ativo">Ativo</option>
+            <option value="vendido">Vendido</option><option value="morto">Morto</option><option value="descartado">Descartado</option>
+          </select>
+        </div>
         <div class="tbl-wrap">
-        <table class="tbl">
-          <colgroup><col style="width:44%" /><col style="width:30%" /><col style="width:14%" /><col style="width:12%" /></colgroup>
-          <thead><tr><th>Brinco</th><th>Raça</th><th>Sexo</th><th></th></tr></thead>
+        <table class="tbl auto">
+          <thead><tr><th>Brinco</th><th>Raça</th><th>Sexo</th><th v-if="filtrando">Lote</th><th></th></tr></thead>
           <tbody>
-            <tr v-for="a in animais" :key="a.id" @click="router.push(`/animais/${a.id}`)">
+            <tr v-for="a in animaisMostrados" :key="a.id" @click="router.push(`/animais/${a.id}`)">
               <td><strong>{{ a.brinco }}</strong><div class="muted sub">{{ a.categoria }}</div></td>
               <td class="muted">{{ a.raca ?? "—" }}</td>
               <td>{{ a.sexo ?? "—" }}</td>
+              <td v-if="filtrando" class="muted">{{ nomeLoteDe(a.lote_id) }}</td>
               <td class="num"><ChevronRight :size="16" class="muted" /></td>
             </tr>
-            <tr v-if="!animais.length"><td colspan="4" class="vazio">Selecione um lote.</td></tr>
+            <tr v-if="!animaisMostrados.length"><td :colspan="filtrando ? 5 : 4" class="vazio">
+              {{ filtrando ? "Nenhum animal encontrado." : "Selecione um lote." }}
+            </td></tr>
           </tbody>
         </table>
         </div>
@@ -221,6 +265,10 @@ async function removerLote(l: Lote, ev: Event) {
 
 <style scoped>
 .sel { width: auto; min-width: 240px; appearance: auto; }
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.filtros .busca { flex: 1; min-width: 150px; }
+.filtros .selm { appearance: auto; width: auto; min-width: 130px; }
+.tbl.auto { table-layout: auto; }
 
 .painel-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: stretch; }
 @media (max-width: 900px) { .painel-grid { grid-template-columns: 1fr; } }
