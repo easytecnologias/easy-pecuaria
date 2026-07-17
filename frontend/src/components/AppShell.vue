@@ -172,6 +172,7 @@ function sair() {
           <button class="hamburger" @click="menuAberto = !menuAberto" aria-label="Menu">
             <Menu :size="20" />
           </button>
+          <div class="topbar__logo">JLN</div>
           <div style="min-width:0">
             <div class="topbar__title">{{ title }}</div>
             <div class="topbar__sub" v-if="sub">{{ sub }}</div>
@@ -179,10 +180,10 @@ function sair() {
         </div>
         <div class="topbar__actions">
           <button class="btn btn--secondary" @click="emit('refresh')">
-            <RefreshCw :size="16" /> Atualizar
+            <RefreshCw :size="16" /> <span>Atualizar</span>
           </button>
-          <RouterLink to="/registrar" class="btn btn--primary">
-            <Plus :size="16" /> Registrar
+          <RouterLink to="/registrar" class="btn btn--primary reg-desktop">
+            <Plus :size="16" /> <span>Registrar</span>
           </RouterLink>
         </div>
       </header>
@@ -190,6 +191,15 @@ function sair() {
         <slot />
       </section>
     </main>
+
+    <!-- barra de abas (só no celular) — substitui o menu lateral -->
+    <nav class="mtabs">
+      <RouterLink to="/painel" class="mtab" :class="{ on: ativo({ to: '/painel', match: ['/painel'] }) }"><span class="mi">📊</span>Painel</RouterLink>
+      <RouterLink to="/rebanho" class="mtab" :class="{ on: ativo({ to: '/rebanho', match: ['/rebanho', '/animais'] }) }"><span class="mi">🐂</span>Rebanho</RouterLink>
+      <RouterLink to="/registrar" class="mfab" aria-label="Registrar">+</RouterLink>
+      <RouterLink to="/relatorios" class="mtab" :class="{ on: ativo({ to: '/relatorios' }) }"><span class="mi">📄</span>Relatórios</RouterLink>
+      <button class="mtab" type="button" @click="menuAberto = true"><span class="mi">☰</span>Menu</button>
+    </nav>
 
     <Modal v-if="modalSenha" titulo="Trocar minha senha" sub="auto-serviço" :largura="440" @fechar="modalSenha = false">
       <div v-if="okSenha" class="senha-ok">✅ Senha alterada com sucesso.</div>

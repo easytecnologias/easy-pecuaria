@@ -180,9 +180,40 @@ a { color: inherit; text-decoration: none; }
   .topbar__actions .btn span, .topbar__sub { display: none; }
 }
 
+/* elementos do "app mobile" — escondidos no computador */
+.topbar__logo { display: none; width: 34px; height: 34px; border-radius: 9px; background: var(--primary);
+  color: #04241a; place-items: center; font-weight: 800; font-size: 13px; flex: none; }
+.mtabs { display: none; }
+
+/* no celular: header vira app-bar escura + barra de abas embaixo */
+@media (max-width: 900px) {
+  .topbar { background: var(--sidebar); border-bottom: none; }
+  .topbar__title { color: #fff; }
+  .topbar__sub { color: var(--sidebar-muted); display: block; }
+  .topbar__logo { display: grid; }
+  .hamburger { display: none; }                 /* o menu agora é a aba "Menu" */
+  .reg-desktop { display: none; }               /* Registrar vira o botão + */
+  .topbar__actions .btn--secondary { background: transparent; border-color: rgba(255,255,255,.22); color: #fff; padding: 0 11px; }
+  .topbar__actions .btn span { display: none; } /* botões só com ícone */
+
+  .workspace { padding-bottom: 84px; }          /* espaço para a barra de abas */
+
+  .mtabs { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    background: var(--sidebar); align-items: center; justify-content: space-around;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -2px 14px rgba(16,38,45,.2); }
+  .mtab { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1;
+    color: var(--sidebar-muted); font-size: 9.5px; font-weight: 600; border: none; background: none;
+    cursor: pointer; text-decoration: none; padding: 2px 0; }
+  .mtab.on { color: #fff; }
+  .mtab .mi { font-size: 19px; line-height: 1; }
+  .mfab { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); color: #fff;
+    display: grid; place-items: center; font-size: 28px; margin-top: -26px; flex: none; text-decoration: none;
+    box-shadow: 0 8px 18px -6px rgba(7,139,100,.7); }
+}
+
 /* impressão: esconde o app e mostra só a folha do relatório */
 @media print {
-  .sidebar, .topbar, .sidebar-backdrop, .hamburger, .no-print { display: none !important; }
+  .sidebar, .topbar, .sidebar-backdrop, .hamburger, .mtabs, .no-print { display: none !important; }
   .app-shell, .main-area { display: block !important; }
   .workspace { padding: 0 !important; overflow: visible !important; }
   .folha { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
