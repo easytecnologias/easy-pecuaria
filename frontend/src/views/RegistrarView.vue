@@ -24,8 +24,8 @@ const tipos = [
   { id: "lote", emoji: "📦", titulo: "Criar lote", desc: "Uma turma/grupo de manejo", ativo: true },
   { id: "pesagem", emoji: "⚖️", titulo: "Registrar pesagem", desc: "Peso de hoje → vira GMD", ativo: true },
   { id: "iatf", emoji: "🧬", titulo: "Inseminação (IATF)", desc: "Reprodução da cria", ativo: true },
-  { id: "vacina", emoji: "💉", titulo: "Vacina / sanidade", desc: "Em breve", ativo: false },
-  { id: "venda", emoji: "💰", titulo: "Venda / abate", desc: "Em breve", ativo: false },
+  { id: "vacina", emoji: "💉", titulo: "Vacina / sanidade", desc: "Vacinas, vermífugos, tratamentos", ativo: true },
+  { id: "venda", emoji: "💰", titulo: "Venda / abate / morte", desc: "Saída do animal do rebanho", ativo: true },
 ];
 
 // forms
@@ -57,7 +57,9 @@ watch(fazendaId, carregarListas);
 const router = useRouter();
 function escolher(id: string, ativo: boolean) {
   if (!ativo) return;
-  if (id === "iatf") { router.push("/reproducao"); return; }
+  // esses tipos têm módulo próprio e mais completo
+  const rota: Record<string, string> = { iatf: "/reproducao", vacina: "/sanitario", venda: "/movimentacao" };
+  if (rota[id]) { router.push(rota[id]); return; }
   modo.value = id as any;
   msg.value = ""; erro.value = "";
 }
