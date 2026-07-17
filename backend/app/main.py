@@ -16,6 +16,7 @@ from app.api.routers import (
     movimento,
     nutricao,
     parto,
+    plataforma,
     rebanho,
     reproducao,
     sanitario,
@@ -39,6 +40,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(plataforma.router)
 app.include_router(fazendas.router)
 app.include_router(dashboard.router)
 app.include_router(alertas.router)

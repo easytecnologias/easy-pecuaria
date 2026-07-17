@@ -15,8 +15,12 @@ watch(() => route.fullPath, () => { menuAberto.value = false; });
 
 // papel do usuário logado — para exibir itens só de administrador
 const papel = ref("");
+const superadmin = ref(false);
 const ehAdmin = computed(() => papel.value === "admin" || papel.value === "direcao");
-onMounted(async () => { try { papel.value = (await me()).papel; } catch { /* ignora */ } });
+onMounted(async () => {
+  try { const u = await me(); papel.value = u.papel; superadmin.value = !!u.is_superadmin; }
+  catch { /* ignora */ }
+});
 
 // menu agrupado por propósito — cada categoria com sua função clara
 const grupos = [
@@ -71,12 +75,23 @@ const grupos = [
       { to: "/admin", label: "Administração", emoji: "⚙️", adminOnly: true },
     ],
   },
+  {
+    titulo: "Plataforma",
+    itens: [
+      { to: "/plataforma", label: "Organizações", emoji: "🏢", superadminOnly: true },
+    ],
+  },
 ];
 
-// esconde itens adminOnly de quem não é admin/direção
+// esconde itens conforme o papel/super-admin do usuário
+function podeVer(i: Record<string, unknown>) {
+  if (i.superadminOnly) return superadmin.value;
+  if (i.adminOnly) return ehAdmin.value;
+  return true;
+}
 const gruposVisiveis = computed(() =>
   grupos
-    .map((g) => ({ ...g, itens: g.itens.filter((i) => !("adminOnly" in i && i.adminOnly) || ehAdmin.value) }))
+    .map((g) => ({ ...g, itens: g.itens.filter(podeVer) }))
     .filter((g) => g.itens.length)
 );
 

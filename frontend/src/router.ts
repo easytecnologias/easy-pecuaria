@@ -20,6 +20,7 @@ const routes = [
   { path: "/financeiro", component: () => import("./views/FinanceiroView.vue") },
   { path: "/metas", component: () => import("./views/MetasView.vue") },
   { path: "/admin", component: () => import("./views/AdministracaoView.vue") },
+  { path: "/plataforma", component: () => import("./views/PlataformaView.vue") },
   { path: "/ajuda", component: () => import("./views/AjudaView.vue") },
   { path: "/fazendas", component: () => import("./views/FazendasView.vue") },
   { path: "/fazendas/:id", component: () => import("./views/FazendaDetailView.vue") },

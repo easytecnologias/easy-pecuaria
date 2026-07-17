@@ -70,6 +70,7 @@ export interface Usuario {
   nome: string;
   email: string;
   papel: string;
+  is_superadmin?: boolean;
 }
 
 export interface SeriePonto {
@@ -112,6 +113,19 @@ export async function login(email: string, senha: string): Promise<void> {
 }
 
 export const me = () => req<Usuario>("/auth/me");
+
+// ---- Plataforma (super-admin: organizações/tenants) ----
+export interface OrgPlataforma { id: string; nome: string; slug: string; n_fazendas: number; n_usuarios: number; }
+export const getOrganizacoes = () => req<OrgPlataforma[]>("/platform/organizacoes");
+export const criarOrganizacao = (body: {
+  nome: string; slug: string; admin_nome: string; admin_email: string; admin_senha: string;
+}) => req<OrgPlataforma>("/platform/organizacoes", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
+export const renomearOrganizacao = (id: string, nome: string) =>
+  req<OrgPlataforma>(`/platform/organizacoes/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome }),
+  });
 
 // ---- Administração (usuários + organização) ----
 export interface UsuarioAdmin {

@@ -21,6 +21,8 @@ class Usuario(Base):
         Enum(PapelUsuario, name="papel_usuario"), default=PapelUsuario.gerente, nullable=False
     )
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # super-admin da plataforma: cria/gerencia organizações (distinto do admin do cliente)
+    is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class UsuarioFazenda(Base):

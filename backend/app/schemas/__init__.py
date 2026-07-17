@@ -23,6 +23,7 @@ class UsuarioOut(BaseModel):
     nome: str
     email: str
     papel: str
+    is_superadmin: bool = False
 
 
 # --- Fazenda ----------------------------------------------------------------
@@ -639,4 +640,24 @@ class OrganizacaoOut(BaseModel):
 
 
 class OrganizacaoUpdateIn(BaseModel):
+    nome: str
+
+
+class OrgPlataformaOut(BaseModel):
+    id: uuid.UUID
+    nome: str
+    slug: str
+    n_fazendas: int
+    n_usuarios: int
+
+
+class OrgCreateIn(BaseModel):
+    nome: str
+    slug: str
+    admin_nome: str
+    admin_email: str
+    admin_senha: str
+
+
+class OrgRenomearIn(BaseModel):
     nome: str
