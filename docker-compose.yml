@@ -1,0 +1,69 @@
+# Deploy do sistema de gestão pecuária (easy-pecuaria).
+# Requer um arquivo .env ao lado (veja .env.example). Nenhum segredo fica aqui.
+#   docker compose build && docker compose up -d
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: pecuaria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pecuaria
+      POSTGRES_USER: pecuaria
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pecuaria-pg-data:/var/lib/postgresql/data
+    ports:
+      # acesso dev via túnel SSH (localhost:5433). Não expõe na rede.
+      - "127.0.0.1:5433:5432"
+    networks: [pecuaria-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pecuaria -d pecuaria"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+    container_name: pecuaria-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://pecuaria:${POSTGRES_PASSWORD:-changeme}@postgres:5432/pecuaria
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@pecuaria.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8101}
+      EXPOSE_DOCS: ${EXPOSE_DOCS:-false}
+    networks: [pecuaria-net]
+
+  web:
+    build:
+      context: ./frontend
+    container_name: pecuaria-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8101:80"
+    networks: [pecuaria-net]
+
+  # HTTPS público via Cloudflare Tunnel — sem abrir portas nem expor IP.
+  # O token vem do painel Cloudflare (Zero Trust > Networks > Tunnels).
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pecuaria-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web
+    networks: [pecuaria-net]
+
+volumes:
+  pecuaria-pg-data:
+
+networks:
+  pecuaria-net:
+    driver: bridge

@@ -13,6 +13,12 @@ venv/
 .env.local
 *.local
 
+# Certificados / chaves (nunca versionar)
+certs/
+*.key
+*.crt
+*.pem
+
 # Node / frontend
 node_modules/
 dist/
