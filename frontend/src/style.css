@@ -179,3 +179,15 @@ a { color: inherit; text-decoration: none; }
   .metrics { grid-template-columns: 1fr; }
   .topbar__actions .btn span, .topbar__sub { display: none; }
 }
+
+/* impressão: esconde o app e mostra só a folha do relatório */
+@media print {
+  .sidebar, .topbar, .sidebar-backdrop, .hamburger, .no-print { display: none !important; }
+  .app-shell, .main-area { display: block !important; }
+  .workspace { padding: 0 !important; overflow: visible !important; }
+  .folha { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+  .folha .rtbl.full tr { break-inside: avoid; }
+  .folha .bloco, .folha .kpi { break-inside: avoid; }
+  body { background: #fff !important; }
+  @page { margin: 14mm; }
+}

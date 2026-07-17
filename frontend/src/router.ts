@@ -16,6 +16,7 @@ const routes = [
   { path: "/movimentacao", component: () => import("./views/MovimentacaoView.vue") },
   { path: "/painel", component: () => import("./views/DashboardView.vue") },
   { path: "/alertas", component: () => import("./views/AlertasView.vue") },
+  { path: "/relatorios", component: () => import("./views/RelatoriosView.vue") },
   { path: "/mercado", component: () => import("./views/MercadoView.vue") },
   { path: "/financeiro", component: () => import("./views/FinanceiroView.vue") },
   { path: "/metas", component: () => import("./views/MetasView.vue") },

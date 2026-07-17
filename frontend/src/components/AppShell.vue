@@ -49,6 +49,7 @@ const grupos = [
     itens: [
       { to: "/painel", label: "Painel", emoji: "📊", match: ["/painel"] },
       { to: "/alertas", label: "Alertas", emoji: "🔔" },
+      { to: "/relatorios", label: "Relatórios", emoji: "📄" },
     ],
   },
   {
