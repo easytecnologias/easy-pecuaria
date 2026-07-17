@@ -5,6 +5,14 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 
+# política mínima de senha
+MIN_SENHA = 8
+
+
+def senha_fraca(senha: str) -> bool:
+    """True se a senha não atende à política mínima (para bloquear no cadastro)."""
+    return len(senha or "") < MIN_SENHA
+
 
 def hash_senha(senha: str) -> str:
     return bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")

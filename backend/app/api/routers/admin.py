@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
-from app.core.security import hash_senha
+from app.core.security import hash_senha, senha_fraca
 from app.models.auditoria import AuditLog
 from app.models.enums import PapelUsuario
 from app.models.organizacao import Fazenda, Organizacao
@@ -93,8 +93,8 @@ def criar_usuario(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email inválido")
     if body.papel not in PAPEIS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Papel inválido")
-    if len(body.senha) < 6:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha deve ter ao menos 6 caracteres")
+    if senha_fraca(body.senha):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha deve ter ao menos 8 caracteres")
     existe = db.execute(select(Usuario).where(Usuario.email == email)).scalar_one_or_none()
     if existe:
         raise HTTPException(status.HTTP_409_CONFLICT, "Já existe um usuário com esse email")
@@ -155,8 +155,8 @@ def resetar_senha(
     db: Session = Depends(get_db), admin: Usuario = Depends(exigir_admin),
 ) -> None:
     u = _get_usuario(usuario_id, db, admin)
-    if len(body.senha) < 6:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha deve ter ao menos 6 caracteres")
+    if senha_fraca(body.senha):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha deve ter ao menos 8 caracteres")
     u.senha_hash = hash_senha(body.senha)
     db.commit()
     registrar_audit(db, admin, "resetar_senha", "usuario", u.id, u.email)

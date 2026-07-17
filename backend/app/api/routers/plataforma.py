@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.core.security import senha_fraca
 from app.models.organizacao import Fazenda, Organizacao
 from app.models.usuario import Usuario
 from app.schemas import OrgCreateIn, OrgPlataformaOut, OrgRenomearIn
@@ -57,8 +58,8 @@ def nova_org(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email do admin inválido")
     if db.execute(select(Usuario).where(Usuario.email == email)).scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Já existe um usuário com esse email")
-    if len(body.admin_senha) < 6:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha do admin deve ter ao menos 6 caracteres")
+    if senha_fraca(body.admin_senha):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha do admin deve ter ao menos 8 caracteres")
     if not body.admin_nome.strip():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Informe o nome do admin")
 

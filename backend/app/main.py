@@ -28,6 +28,10 @@ app = FastAPI(
     title="Pecuaria API",
     description="Backend do sistema de gestao pecuaria (multi-fazenda) — painel + motor de gatilhos.",
     version="0.1.0",
+    # documentação oculta em produção (evita expor o mapa da API)
+    docs_url="/docs" if settings.expose_docs else None,
+    redoc_url="/redoc" if settings.expose_docs else None,
+    openapi_url="/openapi.json" if settings.expose_docs else None,
 )
 
 app.add_middleware(

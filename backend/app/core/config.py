@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     admin_password: str = "admin123"
 
     cors_origins: str = "http://localhost:5173"
+    # em produção mantém a documentação da API (/docs, /openapi.json) oculta
+    expose_docs: bool = False
 
     @property
     def cors_origins_list(self) -> list[str]:
