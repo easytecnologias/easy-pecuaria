@@ -56,6 +56,7 @@ const grupos = [
     titulo: "Rebanho",
     itens: [
       { to: "/rebanho", label: "Rebanho", emoji: "🐂", match: ["/rebanho", "/animais"] },
+      { to: "/campo", label: "Modo campo (pesar)", emoji: "📴" },
       { to: "/registrar", label: "Registrar dados", emoji: "⚖️" },
       { to: "/movimentacao", label: "Movimentação", emoji: "↔️" },
     ],
@@ -196,7 +197,7 @@ function sair() {
     <nav class="mtabs">
       <RouterLink to="/painel" class="mtab" :class="{ on: ativo({ to: '/painel', match: ['/painel'] }) }"><span class="mi">📊</span>Painel</RouterLink>
       <RouterLink to="/rebanho" class="mtab" :class="{ on: ativo({ to: '/rebanho', match: ['/rebanho', '/animais'] }) }"><span class="mi">🐂</span>Rebanho</RouterLink>
-      <RouterLink to="/registrar" class="mfab" aria-label="Registrar">+</RouterLink>
+      <RouterLink to="/campo" class="mfab" aria-label="Pesar no campo">+</RouterLink>
       <RouterLink to="/relatorios" class="mtab" :class="{ on: ativo({ to: '/relatorios' }) }"><span class="mi">📄</span>Relatórios</RouterLink>
       <button class="mtab" type="button" @click="menuAberto = true"><span class="mi">☰</span>Menu</button>
     </nav>

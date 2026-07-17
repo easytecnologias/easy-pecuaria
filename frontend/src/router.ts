@@ -7,6 +7,7 @@ const routes = [
   { path: "/rebanho", component: () => import("./views/RebanhoView.vue") },
   { path: "/animais/:id", component: () => import("./views/FichaAnimalView.vue") },
   { path: "/registrar", component: () => import("./views/RegistrarView.vue") },
+  { path: "/campo", component: () => import("./views/CampoView.vue") },
   { path: "/reproducao", component: () => import("./views/ReproducaoView.vue") },
   { path: "/partos", component: () => import("./views/PartosView.vue") },
   { path: "/escore", component: () => import("./views/EscoreView.vue") },

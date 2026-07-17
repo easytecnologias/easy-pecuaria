@@ -355,6 +355,51 @@ export const lancarPesagem = (animalId: string, peso: number, data?: string) =>
     body: JSON.stringify({ peso, data }),
   });
 
+// ---- Fila offline (escrita sem sinal) ----
+const FILA_KEY = "pecuaria_fila";
+export interface ItemFila { id: string; path: string; body: unknown; rotulo: string; criado: number; }
+export function lerFila(): ItemFila[] {
+  try { return JSON.parse(localStorage.getItem(FILA_KEY) || "[]"); } catch { return []; }
+}
+function gravarFila(f: ItemFila[]) { localStorage.setItem(FILA_KEY, JSON.stringify(f)); }
+export function tamanhoFila(): number { return lerFila().length; }
+function enfileirar(path: string, body: unknown, rotulo: string) {
+  const f = lerFila();
+  const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  f.push({ id, path, body, rotulo, criado: Date.now() });
+  gravarFila(f);
+}
+// tenta enviar tudo da fila; para no 1º erro (provável falta de sinal)
+export async function sincronizarFila(): Promise<{ ok: number; pendente: number }> {
+  let f = lerFila();
+  let ok = 0;
+  for (const item of [...f]) {
+    if (!navigator.onLine) break;
+    try {
+      await req(item.path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.body) });
+      f = f.filter((x) => x.id !== item.id);
+      gravarFila(f);
+      ok++;
+    } catch { break; }
+  }
+  return { ok, pendente: f.length };
+}
+// pesagem "modo campo": com sinal envia na hora; sem sinal, entra na fila
+export async function pesarCampo(
+  animalId: string, brinco: string, peso: number, dataISO?: string,
+): Promise<"online" | "fila"> {
+  const path = `/animais/${animalId}/pesagens`;
+  const body = { peso, data: dataISO };
+  if (navigator.onLine) {
+    try {
+      await req(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      return "online";
+    } catch { enfileirar(path, body, `${brinco} · ${peso} kg`); return "fila"; }
+  }
+  enfileirar(path, body, `${brinco} · ${peso} kg`);
+  return "fila";
+}
+
 // ---- Reprodução ----
 export interface Inseminacao {
   id: string;
