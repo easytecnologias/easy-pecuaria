@@ -114,6 +114,22 @@ export async function login(email: string, senha: string): Promise<void> {
 
 export const me = () => req<Usuario>("/auth/me");
 
+export const trocarMinhaSenha = (senha_atual: string, senha_nova: string) =>
+  req<void>("/auth/senha", {
+    method: "PUT", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ senha_atual, senha_nova }),
+  });
+export async function refreshToken(): Promise<void> {
+  const data = await req<{ access_token: string }>("/auth/refresh", { method: "POST" });
+  setToken(data.access_token);
+}
+
+export interface AuditLog {
+  id: string; usuario_email: string; acao: string;
+  entidade: string | null; entidade_id: string | null; detalhe: string | null; created_at: string;
+}
+export const getAuditoria = () => req<AuditLog[]>("/admin/auditoria");
+
 // ---- Plataforma (super-admin: organizações/tenants) ----
 export interface OrgPlataforma { id: string; nome: string; slug: string; n_fazendas: number; n_usuarios: number; }
 export const getOrganizacoes = () => req<OrgPlataforma[]>("/platform/organizacoes");

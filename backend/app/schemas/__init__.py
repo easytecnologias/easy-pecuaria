@@ -661,3 +661,18 @@ class OrgCreateIn(BaseModel):
 
 class OrgRenomearIn(BaseModel):
     nome: str
+
+
+class AuditLogOut(BaseModel):
+    id: uuid.UUID
+    usuario_email: str
+    acao: str
+    entidade: str | None
+    entidade_id: uuid.UUID | None
+    detalhe: str | None
+    created_at: datetime
+
+
+class TrocarSenhaIn(BaseModel):
+    senha_atual: str
+    senha_nova: str

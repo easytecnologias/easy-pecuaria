@@ -12,6 +12,7 @@ from app.core.deps import get_current_user
 from app.models.organizacao import Fazenda, Organizacao
 from app.models.usuario import Usuario
 from app.schemas import OrgCreateIn, OrgPlataformaOut, OrgRenomearIn
+from app.services.auditoria import registrar_audit
 from app.services.organizacao import criar_organizacao, slugify
 
 router = APIRouter(prefix="/platform", tags=["plataforma"])
@@ -62,6 +63,7 @@ def nova_org(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Informe o nome do admin")
 
     org, _admin = criar_organizacao(db, nome, slug, body.admin_nome, email, body.admin_senha)
+    registrar_audit(db, sa, "criar_organizacao", "organizacao", org.id, f"{org.nome} (admin {email})", org_id=org.id)
     return _out(db, org)
 
 
@@ -78,4 +80,5 @@ def renomear_org(
     org.nome = body.nome.strip()
     db.commit()
     db.refresh(org)
+    registrar_audit(db, sa, "renomear_organizacao", "organizacao", org.id, org.nome, org_id=org.id)
     return _out(db, org)

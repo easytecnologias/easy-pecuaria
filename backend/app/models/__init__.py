@@ -1,6 +1,7 @@
 """Modelos SQLAlchemy. Importados aqui para o Alembic detectar todas as tabelas."""
 
 from app.core.db import Base
+from app.models.auditoria import AuditLog
 from app.models.gatilho import Alerta, RegraGatilho
 from app.models.indicador import IndicadorDefinicao, IndicadorValor
 from app.models.organizacao import Fazenda, Organizacao
@@ -28,6 +29,7 @@ __all__ = [
     "IndicadorValor",
     "RegraGatilho",
     "Alerta",
+    "AuditLog",
     "Lote",
     "Animal",
     "Pesagem",

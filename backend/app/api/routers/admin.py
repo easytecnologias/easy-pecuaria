@@ -10,10 +10,12 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.security import hash_senha
+from app.models.auditoria import AuditLog
 from app.models.enums import PapelUsuario
 from app.models.organizacao import Fazenda, Organizacao
 from app.models.usuario import Usuario, UsuarioFazenda
 from app.schemas import (
+    AuditLogOut,
     OrganizacaoOut,
     OrganizacaoUpdateIn,
     SenhaResetIn,
@@ -21,6 +23,7 @@ from app.schemas import (
     UsuarioCreateIn,
     UsuarioUpdateIn,
 )
+from app.services.auditoria import registrar_audit
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -104,6 +107,7 @@ def criar_usuario(
     _set_fazendas(db, u, body.fazenda_ids)
     db.commit()
     db.refresh(u)
+    registrar_audit(db, admin, "criar_usuario", "usuario", u.id, f"{u.email} ({u.papel.value})")
     return _out(db, u)
 
 
@@ -141,6 +145,7 @@ def editar_usuario(
         _set_fazendas(db, u, body.fazenda_ids if body.fazenda_ids is not None else _fazenda_ids(db, u.id))
     db.commit()
     db.refresh(u)
+    registrar_audit(db, admin, "editar_usuario", "usuario", u.id, f"{u.email} → {u.papel.value}, ativo={u.ativo}")
     return _out(db, u)
 
 
@@ -154,6 +159,7 @@ def resetar_senha(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "A senha deve ter ao menos 6 caracteres")
     u.senha_hash = hash_senha(body.senha)
     db.commit()
+    registrar_audit(db, admin, "resetar_senha", "usuario", u.id, u.email)
 
 
 @router.delete("/usuarios/{usuario_id}", status_code=204)
@@ -165,8 +171,10 @@ def excluir_usuario(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Você não pode excluir a si mesmo")
     if u.papel == PapelUsuario.admin and u.ativo and _n_admins_ativos(db, admin.org_id, exceto=u.id) == 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Precisa haver ao menos um administrador ativo")
+    email_alvo = u.email
     db.delete(u)
     db.commit()
+    registrar_audit(db, admin, "excluir_usuario", "usuario", usuario_id, email_alvo)
 
 
 # ---------------- Organização ----------------
@@ -187,4 +195,18 @@ def editar_organizacao(
     org.nome = body.nome.strip()
     db.commit()
     db.refresh(org)
+    registrar_audit(db, admin, "editar_organizacao", "organizacao", org.id, org.nome)
     return org
+
+
+@router.get("/auditoria", response_model=list[AuditLogOut])
+def auditoria(
+    db: Session = Depends(get_db), admin: Usuario = Depends(exigir_admin)
+) -> list[AuditLog]:
+    """Trilha de auditoria da organização (ações mais recentes primeiro)."""
+    return list(db.execute(
+        select(AuditLog)
+        .where(AuditLog.org_id == admin.org_id)
+        .order_by(AuditLog.created_at.desc())
+        .limit(200)
+    ).scalars().all())

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { LogOut, RefreshCw, Plus, Menu } from "lucide-vue-next";
-import { clearToken, me } from "../api";
+import { LogOut, RefreshCw, Plus, Menu, KeyRound } from "lucide-vue-next";
+import { clearToken, me, trocarMinhaSenha, refreshToken } from "../api";
+import Modal from "./Modal.vue";
 
 defineProps<{ title: string; sub?: string }>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -20,7 +21,26 @@ const ehAdmin = computed(() => papel.value === "admin" || papel.value === "direc
 onMounted(async () => {
   try { const u = await me(); papel.value = u.papel; superadmin.value = !!u.is_superadmin; }
   catch { /* ignora */ }
+  refreshToken().catch(() => { /* sessão desliza silenciosamente */ });
 });
+
+// troca da própria senha (auto-serviço)
+const modalSenha = ref(false);
+const fs = ref({ atual: "", nova: "", conf: "" });
+const erroSenha = ref("");
+const okSenha = ref(false);
+const salvandoSenha = ref(false);
+function abrirSenha() { fs.value = { atual: "", nova: "", conf: "" }; erroSenha.value = ""; okSenha.value = false; modalSenha.value = true; }
+async function salvarSenha() {
+  if (fs.value.nova.length < 6) { erroSenha.value = "A nova senha deve ter ao menos 6 caracteres."; return; }
+  if (fs.value.nova !== fs.value.conf) { erroSenha.value = "A confirmação não confere."; return; }
+  salvandoSenha.value = true; erroSenha.value = "";
+  try {
+    await trocarMinhaSenha(fs.value.atual, fs.value.nova);
+    okSenha.value = true;
+  } catch (e) { erroSenha.value = String(e instanceof Error ? e.message : e); }
+  finally { salvandoSenha.value = false; }
+}
 
 // menu agrupado por propósito — cada categoria com sua função clara
 const grupos = [
@@ -136,6 +156,9 @@ function sair() {
         <RouterLink to="/ajuda" class="nav__item" :class="{ active: route.path === '/ajuda' }">
           <span class="nav__emoji">🧭</span> Como funciona
         </RouterLink>
+        <div class="nav__item" @click="abrirSenha">
+          <KeyRound :size="18" /> Trocar senha
+        </div>
         <div class="nav__item" @click="sair">
           <LogOut :size="18" /> Sair
         </div>
@@ -166,9 +189,30 @@ function sair() {
         <slot />
       </section>
     </main>
+
+    <Modal v-if="modalSenha" titulo="Trocar minha senha" sub="auto-serviço" :largura="440" @fechar="modalSenha = false">
+      <div v-if="okSenha" class="senha-ok">✅ Senha alterada com sucesso.</div>
+      <div v-else class="senha-form">
+        <div class="sfield"><label>Senha atual *</label><input class="input" type="password" v-model="fs.atual" /></div>
+        <div class="sfield"><label>Nova senha *</label><input class="input" type="password" v-model="fs.nova" placeholder="mín. 6 caracteres" /></div>
+        <div class="sfield"><label>Confirmar nova senha *</label><input class="input" type="password" v-model="fs.conf" @keyup.enter="salvarSenha" /></div>
+        <p v-if="erroSenha" class="error">{{ erroSenha }}</p>
+      </div>
+      <template #acoes>
+        <button v-if="okSenha" class="btn btn--primary" @click="modalSenha = false">Fechar</button>
+        <template v-else>
+          <button class="btn btn--secondary" @click="modalSenha = false">Cancelar</button>
+          <button class="btn btn--primary" :disabled="salvandoSenha" @click="salvarSenha">Salvar</button>
+        </template>
+      </template>
+    </Modal>
   </div>
 </template>
 
 <style scoped>
 .nav__emoji { width: 20px; text-align: center; font-size: 16px; line-height: 1; }
+.senha-form { display: flex; flex-direction: column; gap: 13px; }
+.sfield { display: grid; gap: 6px; }
+.sfield label { font-size: 13px; font-weight: 600; }
+.senha-ok { padding: 14px 4px; font-size: 15px; color: var(--primary); font-weight: 600; }
 </style>

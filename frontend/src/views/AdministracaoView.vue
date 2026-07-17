@@ -6,9 +6,20 @@ import Panel from "../components/Panel.vue";
 import Modal from "../components/Modal.vue";
 import {
   getUsuarios, criarUsuario, editarUsuario, resetarSenha, excluirUsuario,
-  getOrganizacao, editarOrganizacao, getFazendas, me,
-  type UsuarioAdmin, type Fazenda,
+  getOrganizacao, editarOrganizacao, getFazendas, getAuditoria, me,
+  type UsuarioAdmin, type Fazenda, type AuditLog,
 } from "../api";
+
+const ROTULO_ACAO: Record<string, string> = {
+  login: "Entrou no sistema", criar_usuario: "Criou usuário", editar_usuario: "Editou usuário",
+  resetar_senha: "Trocou senha de usuário", excluir_usuario: "Excluiu usuário",
+  editar_organizacao: "Editou organização", trocar_propria_senha: "Trocou a própria senha",
+  criar_organizacao: "Criou organização", renomear_organizacao: "Renomeou organização",
+};
+const fmtDataHora = (s: string) => {
+  const d = new Date(s);
+  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
 
 const PAPEIS = [
   { value: "admin", label: "Administrador", desc: "Acesso total, gerencia usuários" },
@@ -22,6 +33,7 @@ const veTodas = (p: string) => p === "admin" || p === "direcao";
 
 const usuarios = ref<UsuarioAdmin[]>([]);
 const fazendas = ref<Fazenda[]>([]);
+const auditoria = ref<AuditLog[]>([]);
 const orgNome = ref("");
 const meuId = ref("");
 const erro = ref("");
@@ -30,8 +42,11 @@ const acessoNegado = ref(false);
 async function carregar() {
   erro.value = "";
   try {
-    const [us, fz, org, eu] = await Promise.all([getUsuarios(), getFazendas(), getOrganizacao(), me()]);
+    const [us, fz, org, eu, aud] = await Promise.all([
+      getUsuarios(), getFazendas(), getOrganizacao(), me(), getAuditoria(),
+    ]);
     usuarios.value = us; fazendas.value = fz; orgNome.value = org.nome; meuId.value = eu.id;
+    auditoria.value = aud;
   } catch (e) {
     const msg = String(e instanceof Error ? e.message : e);
     if (msg.includes("administrador") || msg.includes("403")) acessoNegado.value = true;
@@ -173,6 +188,24 @@ const escopoLabel = (u: UsuarioAdmin) =>
                 </td>
               </tr>
               <tr v-if="!usuarios.length"><td colspan="6" class="vazio">Nenhum usuário.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel title="Auditoria" sub="ações recentes no sistema — quem fez o quê" style="margin-top:16px">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <colgroup><col style="width:16%"/><col style="width:26%"/><col style="width:24%"/><col style="width:34%"/></colgroup>
+            <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead>
+            <tbody>
+              <tr v-for="a in auditoria" :key="a.id">
+                <td class="muted">{{ fmtDataHora(a.created_at) }}</td>
+                <td>{{ a.usuario_email }}</td>
+                <td><span class="badge REVISAR"><span class="dot" /> {{ ROTULO_ACAO[a.acao] ?? a.acao }}</span></td>
+                <td class="muted">{{ a.detalhe ?? "—" }}</td>
+              </tr>
+              <tr v-if="!auditoria.length"><td colspan="4" class="vazio">Nenhuma ação registrada ainda.</td></tr>
             </tbody>
           </table>
         </div>
