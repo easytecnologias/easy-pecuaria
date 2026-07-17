@@ -421,6 +421,14 @@ export interface ResumoFinanceiro {
   margem_cab: number | null; capital_giro_dias: number | null;
   categorias: CategoriaFinanceira[]; lancamentos: Lancamento[];
 }
+export interface PesagemRelItem { brinco: string; categoria: string | null; lote: string | null; peso: number; data: string; gmd: number | null; }
+export interface RelatorioPesagem {
+  total: number; com_pesagem: number; peso_medio: number | null; gmd_medio: number | null;
+  arroba_media: number | null; animais: PesagemRelItem[];
+}
+export const getRelatorioPesagem = (fazendaId: string) =>
+  req<RelatorioPesagem>(`/fazendas/${fazendaId}/relatorio-pesagem`);
+
 export const getFinanceiro = (fazendaId: string) =>
   req<ResumoFinanceiro>(`/fazendas/${fazendaId}/financeiro`);
 export const registrarLancamento = (

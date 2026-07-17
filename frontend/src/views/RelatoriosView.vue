@@ -4,13 +4,18 @@ import { Printer, FileSpreadsheet, FileText } from "lucide-vue-next";
 import AppShell from "../components/AppShell.vue";
 import {
   getFazendas, getAnimais, getLotes, getFinanceiro,
+  getRelatorioPesagem, getSanitario, getReproducao, getPartos,
   type Fazenda, type Animal, type Lote, type ResumoFinanceiro,
+  type RelatorioPesagem, type ResumoSanitario, type ResumoReproducao, type ResumoPartos,
 } from "../api";
 
-type TipoRel = "rebanho" | "financeiro";
+type TipoRel = "rebanho" | "financeiro" | "pesagem" | "sanitario" | "reprodutivo";
 const RELATORIOS: { id: TipoRel; label: string; emoji: string }[] = [
   { id: "rebanho", label: "Inventário do Rebanho", emoji: "📋" },
+  { id: "pesagem", label: "Desempenho / Pesagem", emoji: "⚖️" },
   { id: "financeiro", label: "Financeiro", emoji: "💰" },
+  { id: "sanitario", label: "Sanitário", emoji: "🩺" },
+  { id: "reprodutivo", label: "Reprodutivo", emoji: "🧬" },
 ];
 
 const fazendas = ref<Fazenda[]>([]);
@@ -23,11 +28,17 @@ const carregando = ref(false);
 const animais = ref<Animal[]>([]);
 const lotes = ref<Lote[]>([]);
 const financeiro = ref<ResumoFinanceiro | null>(null);
+const pesagem = ref<RelatorioPesagem | null>(null);
+const sanitario = ref<ResumoSanitario | null>(null);
+const reproducao = ref<ResumoReproducao | null>(null);
+const partos = ref<ResumoPartos | null>(null);
+const rotuloTipoSan: Record<string, string> = { vacina: "Vacina", vermifugo: "Vermífugo", tratamento: "Tratamento", exame: "Exame", carrapaticida: "Carrapaticida", hormonio: "Hormônio" };
 
 const fazenda = computed(() => fazendas.value.find((f) => f.id === fazendaId.value));
 const agora = computed(() => new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }));
 const fmtData = (d: string | null) => (d ? d.split("-").reverse().join("/") : "—");
 const fmtMoeda = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtPct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
 
 // ---- Inventário do rebanho (computado no cliente) ----
 const ativos = computed(() => animais.value.filter((a) => a.status === "ativo"));
@@ -45,10 +56,17 @@ async function carregar() {
   if (!fazendaId.value) return;
   erro.value = ""; carregando.value = true;
   try {
+    const fid = fazendaId.value;
     if (tipo.value === "rebanho") {
-      [animais.value, lotes.value] = await Promise.all([getAnimais(fazendaId.value), getLotes(fazendaId.value)]);
-    } else {
-      financeiro.value = await getFinanceiro(fazendaId.value);
+      [animais.value, lotes.value] = await Promise.all([getAnimais(fid), getLotes(fid)]);
+    } else if (tipo.value === "financeiro") {
+      financeiro.value = await getFinanceiro(fid);
+    } else if (tipo.value === "pesagem") {
+      pesagem.value = await getRelatorioPesagem(fid);
+    } else if (tipo.value === "sanitario") {
+      sanitario.value = await getSanitario(fid);
+    } else if (tipo.value === "reprodutivo") {
+      [reproducao.value, partos.value] = await Promise.all([getReproducao(fid), getPartos(fid)]);
     }
   } catch (e) { erro.value = String(e instanceof Error ? e.message : e); }
   finally { carregando.value = false; }
@@ -79,12 +97,22 @@ function exportarExcel() {
       linhas.push([a.brinco, a.categoria ?? "", a.raca ?? "", a.sexo ?? "", fmtData(a.data_nascimento), nomeLote(a.lote_id), a.status]);
     }
     baixarCSV(`rebanho-${nomeFaz}.csv`, linhas);
-  } else if (financeiro.value) {
+  } else if (tipo.value === "financeiro" && financeiro.value) {
     const linhas: (string | number)[][] = [["Data", "Tipo", "Categoria", "Valor", "Descrição"]];
-    for (const l of financeiro.value.lancamentos) {
-      linhas.push([fmtData(l.data), l.tipo, l.categoria, l.valor, l.descricao ?? ""]);
-    }
+    for (const l of financeiro.value.lancamentos) linhas.push([fmtData(l.data), l.tipo, l.categoria, l.valor, l.descricao ?? ""]);
     baixarCSV(`financeiro-${nomeFaz}.csv`, linhas);
+  } else if (tipo.value === "pesagem" && pesagem.value) {
+    const linhas: (string | number)[][] = [["Brinco", "Categoria", "Lote", "Peso (kg)", "Data", "GMD (kg/dia)"]];
+    for (const a of pesagem.value.animais) linhas.push([a.brinco, a.categoria ?? "", a.lote ?? "", a.peso, fmtData(a.data), a.gmd ?? ""]);
+    baixarCSV(`pesagem-${nomeFaz}.csv`, linhas);
+  } else if (tipo.value === "sanitario" && sanitario.value) {
+    const linhas: (string | number)[][] = [["Brinco", "Tipo", "Produto", "Data", "Próxima", "Dose"]];
+    for (const h of sanitario.value.historico) linhas.push([h.brinco, rotuloTipoSan[h.tipo] ?? h.tipo, h.produto, fmtData(h.data), fmtData(h.proxima), h.dose ?? ""]);
+    baixarCSV(`sanitario-${nomeFaz}.csv`, linhas);
+  } else if (tipo.value === "reprodutivo" && reproducao.value) {
+    const linhas: (string | number)[][] = [["Brinco", "Touro", "Inseminador", "Data", "Resultado"]];
+    for (const i of reproducao.value.inseminacoes) linhas.push([i.animal_brinco, i.touro, i.inseminador ?? "", fmtData(i.data), i.resultado]);
+    baixarCSV(`reprodutivo-${nomeFaz}.csv`, linhas);
   }
 }
 </script>
@@ -198,6 +226,89 @@ function exportarExcel() {
               <td>{{ l.categoria }}</td><td class="num">{{ fmtMoeda(l.valor) }}</td><td>{{ l.descricao ?? "—" }}</td>
             </tr>
             <tr v-if="!financeiro.lancamentos.length"><td colspan="5" class="vazio">Sem lançamentos.</td></tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- PESAGEM / DESEMPENHO -->
+      <template v-else-if="tipo === 'pesagem' && pesagem">
+        <div class="kpis">
+          <div class="kpi"><span>Animais pesados</span><b>{{ pesagem.com_pesagem }} / {{ pesagem.total }}</b></div>
+          <div class="kpi"><span>Peso médio</span><b>{{ pesagem.peso_medio === null ? '—' : pesagem.peso_medio + ' kg' }}</b></div>
+          <div class="kpi"><span>@ média</span><b>{{ pesagem.arroba_media === null ? '—' : pesagem.arroba_media + ' @' }}</b></div>
+          <div class="kpi"><span>GMD médio</span><b>{{ pesagem.gmd_medio === null ? '—' : pesagem.gmd_medio + ' kg/dia' }}</b></div>
+        </div>
+        <h3 class="lista-tit">Última pesagem por animal ({{ pesagem.com_pesagem }})</h3>
+        <table class="rtbl full">
+          <thead><tr><th>Brinco</th><th>Categoria</th><th>Lote</th><th class="num">Peso (kg)</th><th>Data</th><th class="num">GMD (kg/dia)</th></tr></thead>
+          <tbody>
+            <tr v-for="(a, i) in pesagem.animais" :key="i">
+              <td><b>{{ a.brinco }}</b></td><td>{{ a.categoria ?? "—" }}</td><td>{{ a.lote ?? "—" }}</td>
+              <td class="num">{{ a.peso }}</td><td>{{ fmtData(a.data) }}</td><td class="num">{{ a.gmd ?? "—" }}</td>
+            </tr>
+            <tr v-if="!pesagem.animais.length"><td colspan="6" class="vazio">Nenhum animal com pesagem registrada.</td></tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- SANITÁRIO -->
+      <template v-else-if="tipo === 'sanitario' && sanitario">
+        <div class="kpis">
+          <div class="kpi"><span>Aplicações registradas</span><b>{{ sanitario.total }}</b></div>
+          <div class="kpi"><span>Vencendo (15 dias)</span><b :class="sanitario.vencendo ? 'neg' : ''">{{ sanitario.vencendo }}</b></div>
+        </div>
+        <h3 class="lista-tit">Agenda — próximas aplicações</h3>
+        <table class="rtbl full">
+          <thead><tr><th>Produto</th><th>Tipo</th><th class="num">Animais</th><th class="num">Próxima</th></tr></thead>
+          <tbody>
+            <tr v-for="(a, i) in sanitario.agenda" :key="i">
+              <td><b>{{ a.produto }}</b></td><td>{{ rotuloTipoSan[a.tipo] ?? a.tipo }}</td>
+              <td class="num">{{ a.animais }}</td><td class="num" :class="a.vencido ? 'neg' : ''">{{ fmtData(a.proxima) }}</td>
+            </tr>
+            <tr v-if="!sanitario.agenda.length"><td colspan="4" class="vazio">Nada agendado.</td></tr>
+          </tbody>
+        </table>
+        <h3 class="lista-tit">Histórico de aplicações ({{ sanitario.historico.length }})</h3>
+        <table class="rtbl full">
+          <thead><tr><th>Brinco</th><th>Produto</th><th>Tipo</th><th>Data</th><th>Dose</th></tr></thead>
+          <tbody>
+            <tr v-for="h in sanitario.historico" :key="h.id">
+              <td><b>{{ h.brinco }}</b></td><td>{{ h.produto }}</td><td>{{ rotuloTipoSan[h.tipo] ?? h.tipo }}</td>
+              <td>{{ fmtData(h.data) }}</td><td>{{ h.dose ?? "—" }}</td>
+            </tr>
+            <tr v-if="!sanitario.historico.length"><td colspan="5" class="vazio">Sem registros.</td></tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- REPRODUTIVO -->
+      <template v-else-if="tipo === 'reprodutivo' && reproducao">
+        <div class="kpis">
+          <div class="kpi"><span>Taxa de prenhez</span><b>{{ fmtPct(reproducao.taxa_prenhez) }}</b></div>
+          <div class="kpi"><span>Prenhes / Vazias</span><b>{{ reproducao.prenhes }} / {{ reproducao.vazias }}</b></div>
+          <div class="kpi"><span>Partos (12 m)</span><b>{{ partos?.partos_12m ?? 0 }}</b></div>
+          <div class="kpi"><span>Natalidade</span><b>{{ fmtPct(partos?.taxa_natalidade ?? null) }}</b></div>
+        </div>
+        <h3 class="lista-tit">Prenhez por touro</h3>
+        <table class="rtbl full">
+          <thead><tr><th>Touro</th><th class="num">IATF</th><th class="num">Prenhes</th><th class="num">Vazias</th><th class="num">Taxa</th></tr></thead>
+          <tbody>
+            <tr v-for="(g, i) in reproducao.por_touro" :key="i">
+              <td><b>{{ g.nome }}</b></td><td class="num">{{ g.total }}</td><td class="num">{{ g.prenhes }}</td>
+              <td class="num">{{ g.vazias }}</td><td class="num">{{ fmtPct(g.taxa) }}</td>
+            </tr>
+            <tr v-if="!reproducao.por_touro.length"><td colspan="5" class="vazio">Sem inseminações.</td></tr>
+          </tbody>
+        </table>
+        <h3 class="lista-tit">Partos ({{ partos?.partos.length ?? 0 }})</h3>
+        <table class="rtbl full">
+          <thead><tr><th>Data</th><th>Mãe</th><th>Bezerro</th><th>Sexo</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr v-for="p in partos?.partos ?? []" :key="p.id">
+              <td>{{ fmtData(p.data) }}</td><td><b>{{ p.mae_brinco }}</b></td><td>{{ p.brinco_bezerro ?? "—" }}</td>
+              <td>{{ p.sexo_bezerro ?? "—" }}</td><td>{{ p.resultado === 'nascido_vivo' ? 'Nascido vivo' : 'Natimorto' }}</td>
+            </tr>
+            <tr v-if="!(partos?.partos.length)"><td colspan="5" class="vazio">Sem partos registrados.</td></tr>
           </tbody>
         </table>
       </template>

@@ -676,3 +676,21 @@ class AuditLogOut(BaseModel):
 class TrocarSenhaIn(BaseModel):
     senha_atual: str
     senha_nova: str
+
+
+class PesagemRelItem(BaseModel):
+    brinco: str
+    categoria: str | None
+    lote: str | None
+    peso: float
+    data: date
+    gmd: float | None
+
+
+class RelatorioPesagem(BaseModel):
+    total: int
+    com_pesagem: int
+    peso_medio: float | None
+    gmd_medio: float | None
+    arroba_media: float | None
+    animais: list[PesagemRelItem]

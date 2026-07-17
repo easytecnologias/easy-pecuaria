@@ -18,6 +18,8 @@ from app.schemas import (
     InseminacaoOut,
     LoteIn,
     LoteOut,
+    PesagemRelItem,
+    RelatorioPesagem,
     LoteUpdateIn,
     PesagemIn,
     PesagemOut,
@@ -255,3 +257,48 @@ def lancar_pesagem(
     # evento -> indicador -> gatilho
     recomputar_indicadores_rebanho(db, faz)
     return ficha_animal(animal_id, db, user)
+
+
+@router.get("/fazendas/{fazenda_id}/relatorio-pesagem", response_model=RelatorioPesagem)
+def relatorio_pesagem(
+    fazenda_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+) -> RelatorioPesagem:
+    """Última pesagem de cada animal da fazenda + médias (peso, GMD, @)."""
+    faz = get_fazenda_no_escopo(fazenda_id, db, user)
+    ult = (
+        select(Pesagem.animal_id, func.max(Pesagem.data).label("dmax"))
+        .where(Pesagem.fazenda_id == faz.id)
+        .group_by(Pesagem.animal_id)
+        .subquery()
+    )
+    rows = db.execute(
+        select(Animal.brinco, Animal.categoria, Lote.nome, Pesagem.peso, Pesagem.data, Pesagem.gmd)
+        .join(Pesagem, Pesagem.animal_id == Animal.id)
+        .join(ult, (Pesagem.animal_id == ult.c.animal_id) & (Pesagem.data == ult.c.dmax))
+        .outerjoin(Lote, Lote.id == Animal.lote_id)
+        .where(Animal.fazenda_id == faz.id)
+        .order_by(Animal.brinco)
+    ).all()
+
+    itens = [
+        PesagemRelItem(
+            brinco=brinco, categoria=categoria, lote=lote,
+            peso=float(peso), data=data, gmd=float(gmd) if gmd is not None else None,
+        )
+        for brinco, categoria, lote, peso, data, gmd in rows
+    ]
+    total = int(db.execute(
+        select(func.count(Animal.id)).where(Animal.fazenda_id == faz.id, Animal.status == "ativo")
+    ).scalar_one())
+    pesos = [i.peso for i in itens]
+    gmds = [i.gmd for i in itens if i.gmd is not None]
+    peso_medio = round(sum(pesos) / len(pesos), 1) if pesos else None
+    gmd_medio = round(sum(gmds) / len(gmds), 3) if gmds else None
+    arroba_media = round(peso_medio / 30, 2) if peso_medio else None
+    return RelatorioPesagem(
+        total=total, com_pesagem=len(itens),
+        peso_medio=peso_medio, gmd_medio=gmd_medio, arroba_media=arroba_media,
+        animais=itens,
+    )
