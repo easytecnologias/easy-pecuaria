@@ -56,6 +56,21 @@ def resumo(db: Session, fazenda: Fazenda) -> dict:
         if alvo is not None and abs(float(s.ms_real) - alvo) > 0.03
     ]
 
+    # audio 3: estoque de seguranca — o silo que ja chegou no minimo definido
+    abaixo_seguranca = [
+        s.nome for s in abertos
+        if s.estoque_seguranca_t is not None and s.quantidade_t is not None
+        and float(s.quantidade_t) <= float(s.estoque_seguranca_t)
+    ]
+    seguranca_t = sum(
+        float(s.estoque_seguranca_t) for s in abertos if s.estoque_seguranca_t
+    )
+    # quantos dias ate o estoque total encostar na reserva de seguranca — e o
+    # prazo que sobra para plantar/colher de novo sem ficar sem volumoso
+    dias_ate_seguranca = (
+        int((total_t - seguranca_t) / consumo) if consumo and total_t > seguranca_t else None
+    )
+
     return {
         "total_silos": len(silos),
         "silos_abertos": len(abertos),
@@ -65,6 +80,9 @@ def resumo(db: Session, fazenda: Fazenda) -> dict:
         "ms_media": ms_media,
         "ms_alvo": alvo,
         "fora_do_alvo": fora_do_alvo,
+        "abaixo_seguranca": abaixo_seguranca,
+        "estoque_seguranca_t": round(seguranca_t, 3) if seguranca_t else None,
+        "dias_ate_seguranca": dias_ate_seguranca,
         "por_tipo": por_tipo,
         "silos": silos,
     }

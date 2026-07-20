@@ -35,6 +35,9 @@ class Silagem(Base):
     # volume
     quantidade_t: Mapped[float | None] = mapped_column(Numeric(12, 3))   # produzido
     consumo_diario_t: Mapped[float | None] = mapped_column(Numeric(12, 3))
+    # audio 3: "voce pode deixar o quantitativo de estoque de seguranca"
+    # quando o saldo do silo chega nesse valor, o silo entra no aviso de reposicao
+    estoque_seguranca_t: Mapped[float | None] = mapped_column(Numeric(12, 3))
 
     # colheita (subtopico pedido no audio 8)
     maquinario: Mapped[str | None] = mapped_column(String(160))      # colhedora, vagao, trator

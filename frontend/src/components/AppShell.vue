@@ -89,6 +89,7 @@ const grupos = [
     titulo: "Financeiro",
     itens: [
       { to: "/financeiro", label: "Financeiro", emoji: "💵" },
+      { to: "/contas", label: "Contas a pagar/receber", emoji: "🧾" },
       { to: "/mercado", label: "Mercado", emoji: "💰" },
     ],
   },

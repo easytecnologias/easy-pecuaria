@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Layers, Droplets, CalendarClock, Plus, Pencil, Trash2, AlertTriangle } from "lucide-vue-next";
+import { Layers, Droplets, CalendarClock, Plus, Pencil, Trash2, AlertTriangle, PackageMinus } from "lucide-vue-next";
 import AppShell from "../components/AppShell.vue";
 import Panel from "../components/Panel.vue";
 import KpiCard from "../components/KpiCard.vue";
@@ -30,6 +30,11 @@ function foraDoAlvo(s: Silagem) {
   if (s.ms_real === null || !dados.value?.ms_alvo) return false;
   return Math.abs(s.ms_real - dados.value.ms_alvo) > 0.03;
 }
+// audio 3: silo que ja encostou no estoque de seguranca
+function noMinimo(s: Silagem) {
+  if (s.estoque_seguranca_t === null || s.quantidade_t === null) return false;
+  return s.quantidade_t <= s.estoque_seguranca_t;
+}
 
 async function carregar() {
   if (!fazendaId.value) return;
@@ -48,8 +53,8 @@ const modal = ref(false);
 const editando = ref<Silagem | null>(null);
 const vazio = {
   nome: "", tipo: "milho", data_ensilagem: "", ms_meta: "", ms_real: "", umidade: "",
-  temperatura: "", quantidade_t: "", consumo_diario_t: "", maquinario: "", destino: "",
-  responsavel: "", observacao: "", situacao: "aberto",
+  temperatura: "", quantidade_t: "", consumo_diario_t: "", estoque_seguranca_t: "",
+  maquinario: "", destino: "", responsavel: "", observacao: "", situacao: "aberto",
 };
 const form = ref({ ...vazio });
 const erroModal = ref("");
@@ -66,6 +71,7 @@ function abrirEdicao(s: Silagem) {
     temperatura: s.temperatura?.toString() ?? "",
     quantidade_t: s.quantidade_t?.toString() ?? "",
     consumo_diario_t: s.consumo_diario_t?.toString() ?? "",
+    estoque_seguranca_t: s.estoque_seguranca_t?.toString() ?? "",
     maquinario: s.maquinario ?? "", destino: s.destino ?? "",
     responsavel: s.responsavel ?? "", observacao: s.observacao ?? "", situacao: s.situacao,
   };
@@ -84,6 +90,7 @@ async function salvar() {
     ms_meta: frac(form.value.ms_meta), ms_real: frac(form.value.ms_real),
     umidade: frac(form.value.umidade), temperatura: num(form.value.temperatura),
     quantidade_t: num(form.value.quantidade_t), consumo_diario_t: num(form.value.consumo_diario_t),
+    estoque_seguranca_t: num(form.value.estoque_seguranca_t),
     maquinario: form.value.maquinario || null, destino: form.value.destino || null,
     responsavel: form.value.responsavel || null, observacao: form.value.observacao || null,
     situacao: form.value.situacao,
@@ -125,7 +132,13 @@ async function remover(s: Silagem) {
       <KpiCard label="Matéria seca média" :value="pct(dados.ms_media)"
                :sub="`alvo ${pct(dados.ms_alvo)}`" :icon="Droplets" :tone="msTone" />
       <KpiCard label="Dias estimados" :value="dados.dias_estimados === null ? '—' : `${dados.dias_estimados} d`"
-               sub="pelo consumo informado" :icon="CalendarClock" tone="amber" />
+               :sub="dados.dias_ate_seguranca !== null ? `${dados.dias_ate_seguranca} d até a reserva` : 'pelo consumo informado'"
+               :icon="CalendarClock" tone="amber" />
+    </div>
+
+    <div v-if="dados?.abaixo_seguranca.length" class="aviso aviso--perigo">
+      <PackageMinus :size="18" />
+      <span>No estoque de segurança: <b>{{ dados.abaixo_seguranca.join(", ") }}</b> — hora de repor o volumoso.</span>
     </div>
 
     <div v-if="dados?.fora_do_alvo.length" class="aviso">
@@ -160,7 +173,11 @@ async function remover(s: Silagem) {
               </td>
               <td>{{ rotTipo(s.tipo) }}</td>
               <td class="muted">{{ fmtData(s.data_ensilagem) }}</td>
-              <td class="num tnum">{{ s.quantidade_t ?? "—" }}</td>
+              <td class="num tnum" :class="noMinimo(s) ? 'minimo' : ''">
+                {{ s.quantidade_t ?? "—" }}
+                <PackageMinus v-if="noMinimo(s)" :size="12" />
+                <div v-if="s.estoque_seguranca_t !== null" class="muted seg">mín {{ s.estoque_seguranca_t }}</div>
+              </td>
               <td class="num tnum" :class="foraDoAlvo(s) ? 'fora' : ''">
                 {{ pct(s.ms_real) }}
                 <AlertTriangle v-if="foraDoAlvo(s)" :size="12" />
@@ -225,9 +242,15 @@ async function remover(s: Silagem) {
             <input class="input tnum" type="number" v-model="form.quantidade_t" placeholder="800" />
           </div>
         </div>
-        <div class="field"><label>Consumo diário (t/dia)</label>
-          <input class="input tnum" type="number" v-model="form.consumo_diario_t" placeholder="6" />
-          <span class="hint">Usado para estimar os dias de silagem.</span>
+        <div class="dupla">
+          <div class="field"><label>Consumo diário (t/dia)</label>
+            <input class="input tnum" type="number" v-model="form.consumo_diario_t" placeholder="6" />
+            <span class="hint">Usado para estimar os dias de silagem.</span>
+          </div>
+          <div class="field"><label>Estoque de segurança (t)</label>
+            <input class="input tnum" type="number" v-model="form.estoque_seguranca_t" placeholder="100" />
+            <span class="hint">Quando o silo chegar nesse volume, a tela avisa.</span>
+          </div>
         </div>
 
         <div class="secao">Colheita</div>
@@ -268,6 +291,9 @@ async function remover(s: Silagem) {
 .tbl th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
 .tbl .num { text-align: right; }
 .fora { color: var(--amber); font-weight: 700; }
+.minimo { color: var(--danger); font-weight: 700; }
+.seg { font-size: 11px; font-weight: 400; margin-top: 2px; }
+.aviso--perigo { background: #fcebeb; border-color: #f0c9c9; color: #8a1212; }
 .acoes { white-space: nowrap; display: flex; gap: 4px; justify-content: flex-end; }
 .vazio { text-align: center; padding: 20px; color: var(--muted); }
 .iconbtn { border: 1px solid var(--border); background: var(--surface); color: var(--muted);

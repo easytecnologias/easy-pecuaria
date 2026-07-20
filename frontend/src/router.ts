@@ -13,6 +13,7 @@ const routes = [
   { path: "/escore", component: () => import("./views/EscoreView.vue") },
   { path: "/desmame", component: () => import("./views/DesmameView.vue") },
   { path: "/inventario", component: () => import("./views/InventarioView.vue") },
+  { path: "/contas", component: () => import("./views/ContasView.vue") },
   { path: "/planejamento", component: () => import("./views/PlanejamentoView.vue") },
   { path: "/silagem", component: () => import("./views/SilagemView.vue") },
   { path: "/nutricao", component: () => import("./views/NutricaoView.vue") },
