@@ -40,3 +40,6 @@ Thumbs.db
 
 # Scratch / temporários
 _*.mjs
+
+# Áudios de requisitos do cliente (WhatsApp) - não versionar
+audios/

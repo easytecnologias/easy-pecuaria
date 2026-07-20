@@ -50,6 +50,7 @@ const grupos = [
       { to: "/painel", label: "Painel", emoji: "📊", match: ["/painel"] },
       { to: "/alertas", label: "Alertas", emoji: "🔔" },
       { to: "/relatorios", label: "Relatórios", emoji: "📄" },
+      { to: "/planejamento", label: "Planejamento", emoji: "🗓️" },
     ],
   },
   {
@@ -81,6 +82,7 @@ const grupos = [
     itens: [
       { to: "/nutricao", label: "Nutrição", emoji: "🥗" },
       { to: "/estoque", label: "Estoque", emoji: "🌽" },
+      { to: "/silagem", label: "Silagem", emoji: "🌾" },
     ],
   },
   {

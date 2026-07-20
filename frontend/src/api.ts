@@ -679,3 +679,83 @@ export const registrarDesmama = (animalId: string, peso: number, data?: string) 
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ peso, data }),
   });
+
+// --- Planejamento de atividades (audio 13) ----------------------------------
+export const PERIODOS = [
+  { valor: "semanal", rotulo: "Semanal" },
+  { valor: "mensal", rotulo: "Mensal" },
+  { valor: "anual", rotulo: "Anual" },
+];
+export const TIPOS_ATIVIDADE = [
+  { valor: "manejo_rebanho", rotulo: "Manejo de rebanho" },
+  { valor: "manejo_sanitario", rotulo: "Manejo sanitário" },
+  { valor: "pesagem", rotulo: "Pesagem de gado" },
+  { valor: "reproducao", rotulo: "Reprodução" },
+  { valor: "nutricao", rotulo: "Nutrição" },
+  { valor: "manutencao", rotulo: "Manutenção" },
+  { valor: "administrativo", rotulo: "Administrativo" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface Atividade {
+  id: string; fazenda_id: string; titulo: string; descricao: string | null;
+  tipo: string; periodo: string; data_prevista: string; status: string;
+  responsavel_id: string | null; responsavel_nome: string | null;
+  criado_por_nome: string | null; concluida_em: string | null;
+  concluida_por_nome: string | null; observacao_conclusao: string | null;
+}
+export interface ResumoPlanejamento {
+  total: number; abertas: number; concluidas: number; atrasadas: number;
+  da_semana: number; minhas_pendentes: number; taxa_conclusao: number | null;
+  por_periodo: Record<string, number>; atividades: Atividade[];
+}
+export const getPlanejamento = (fazendaId: string) =>
+  req<ResumoPlanejamento>(`/fazendas/${fazendaId}/planejamento`);
+export const criarAtividade = (fazendaId: string, body: Partial<Atividade>) =>
+  req<Atividade>(`/fazendas/${fazendaId}/planejamento`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarAtividade = (id: string, body: Partial<Atividade>) =>
+  req<Atividade>(`/planejamento/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const concluirAtividade = (id: string, observacao?: string) =>
+  req<Atividade>(`/planejamento/${id}/concluir`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ observacao }),
+  });
+export const excluirAtividade = (id: string) =>
+  req<void>(`/planejamento/${id}`, { method: "DELETE" });
+
+// --- Silagem como modulo proprio (audio 8) ----------------------------------
+export const TIPOS_SILAGEM = [
+  { valor: "milho", rotulo: "Milho" },
+  { valor: "sorgo", rotulo: "Sorgo" },
+  { valor: "capim", rotulo: "Capim" },
+  { valor: "cana", rotulo: "Cana" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface Silagem {
+  id: string; fazenda_id: string; nome: string; tipo: string;
+  data_ensilagem: string | null; ms_meta: number | null; ms_real: number | null;
+  umidade: number | null; temperatura: number | null;
+  quantidade_t: number | null; consumo_diario_t: number | null;
+  maquinario: string | null; destino: string | null; responsavel: string | null;
+  observacao: string | null; situacao: string;
+}
+export interface ResumoSilagem {
+  total_silos: number; silos_abertos: number; total_t: number;
+  consumo_diario_t: number | null; dias_estimados: number | null;
+  ms_media: number | null; ms_alvo: number | null;
+  fora_do_alvo: string[]; por_tipo: Record<string, number>; silos: Silagem[];
+}
+export const getSilagem = (fazendaId: string) =>
+  req<ResumoSilagem>(`/fazendas/${fazendaId}/silagem`);
+export const criarSilagem = (fazendaId: string, body: Partial<Silagem>) =>
+  req<Silagem>(`/fazendas/${fazendaId}/silagem`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarSilagem = (id: string, body: Partial<Silagem>) =>
+  req<Silagem>(`/silagem/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const excluirSilagem = (id: string) => req<void>(`/silagem/${id}`, { method: "DELETE" });

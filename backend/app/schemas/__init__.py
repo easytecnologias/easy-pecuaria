@@ -785,3 +785,94 @@ class ResumoDesmama(BaseModel):
     peso_medio_desmama: float | None
     peso_desmama_meta: float | None
     por_tipo_matriz: dict[str, int]
+
+
+# --- Planejamento de atividades (audio 13) ----------------------------------
+class AtividadeIn(BaseModel):
+    titulo: str
+    descricao: str | None = None
+    tipo: str = "outro"
+    periodo: str = "semanal"
+    data_prevista: date
+    responsavel_id: uuid.UUID | None = None
+
+
+class AtividadeUpdateIn(BaseModel):
+    titulo: str | None = None
+    descricao: str | None = None
+    tipo: str | None = None
+    periodo: str | None = None
+    data_prevista: date | None = None
+    responsavel_id: uuid.UUID | None = None
+    status: str | None = None
+
+
+class AtividadeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    fazenda_id: uuid.UUID
+    titulo: str
+    descricao: str | None
+    tipo: str
+    periodo: str
+    data_prevista: date
+    status: str
+    responsavel_id: uuid.UUID | None
+    responsavel_nome: str | None
+    criado_por_nome: str | None
+    concluida_em: datetime | None
+    concluida_por_nome: str | None
+    observacao_conclusao: str | None
+
+
+class ConcluirAtividadeIn(BaseModel):
+    observacao: str | None = None
+
+
+class ResumoPlanejamento(BaseModel):
+    total: int
+    abertas: int
+    concluidas: int
+    atrasadas: int
+    da_semana: int
+    minhas_pendentes: int
+    taxa_conclusao: float | None
+    por_periodo: dict[str, int]
+    atividades: list[AtividadeOut]
+
+
+# --- Silagem como modulo proprio (audio 8) ----------------------------------
+class SilagemIn(BaseModel):
+    nome: str
+    tipo: str
+    data_ensilagem: date | None = None
+    ms_meta: float | None = None
+    ms_real: float | None = None
+    umidade: float | None = None
+    temperatura: float | None = None
+    quantidade_t: float | None = None
+    consumo_diario_t: float | None = None
+    maquinario: str | None = None
+    destino: str | None = None
+    responsavel: str | None = None
+    observacao: str | None = None
+    situacao: str = "aberto"
+
+
+class SilagemOut(SilagemIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    fazenda_id: uuid.UUID
+
+
+class ResumoSilagem(BaseModel):
+    total_silos: int
+    silos_abertos: int
+    total_t: float
+    consumo_diario_t: float | None
+    dias_estimados: int | None
+    ms_media: float | None
+    ms_alvo: float | None
+    fora_do_alvo: list[str]
+    por_tipo: dict[str, float]
+    silos: list[SilagemOut]

@@ -18,10 +18,12 @@ from app.api.routers import (
     movimento,
     nutricao,
     parto,
+    planejamento,
     plataforma,
     rebanho,
     reproducao,
     sanitario,
+    silagem,
 )
 from app.core.config import settings
 from app.core.db import engine
@@ -63,6 +65,8 @@ app.include_router(movimento.router)
 app.include_router(parto.router)
 app.include_router(inventario.router)
 app.include_router(desmame.router)
+app.include_router(planejamento.router)
+app.include_router(silagem.router)
 
 
 @app.get("/health", tags=["infra"])
