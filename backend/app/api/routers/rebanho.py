@@ -72,7 +72,7 @@ def criar_lote(
     user: Usuario = Depends(get_current_user),
 ) -> LoteOut:
     faz = get_fazenda_no_escopo(fazenda_id, db, user)
-    lote = Lote(fazenda_id=faz.id, nome=body.nome, categoria=body.categoria, local=body.local)
+    lote = Lote(fazenda_id=faz.id, **body.model_dump())
     db.add(lote)
     db.commit()
     db.refresh(lote)

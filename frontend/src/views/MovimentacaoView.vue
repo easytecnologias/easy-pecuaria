@@ -101,18 +101,19 @@ async function remover(id: string) {
         <template #actions><button class="btn btn--primary" style="height:34px" @click="abrir"><Plus :size="15" /> Registrar movimento</button></template>
         <div class="tbl-wrap">
           <table class="tbl">
-            <colgroup><col style="width:18%"/><col style="width:22%"/><col style="width:16%"/><col style="width:20%"/><col style="width:14%"/><col style="width:10%"/></colgroup>
-            <thead><tr><th>Brinco</th><th>Tipo</th><th class="num">Valor</th><th>Motivo</th><th class="num">Data</th><th class="num"></th></tr></thead>
+            <colgroup><col style="width:15%"/><col style="width:18%"/><col style="width:13%"/><col style="width:17%"/><col style="width:17%"/><col style="width:12%"/><col style="width:8%"/></colgroup>
+            <thead><tr><th>Brinco</th><th>Tipo</th><th class="num">Valor</th><th>Motivo</th><th>Quem movimentou</th><th class="num">Data</th><th class="num"></th></tr></thead>
             <tbody>
               <tr v-for="m in mov.movimentos" :key="m.id">
                 <td><strong>{{ m.brinco }}</strong></td>
                 <td><span :class="['badge', tone[m.tipo]]"><span class="dot"/> {{ rot[m.tipo] }}</span></td>
                 <td class="num tnum">{{ m.valor !== null ? "R$ " + m.valor.toFixed(2) : "—" }}</td>
                 <td class="muted">{{ m.motivo ?? "—" }}</td>
+                <td class="muted">{{ m.usuario_nome ?? "—" }}</td>
                 <td class="num muted">{{ fmtData(m.data) }}</td>
                 <td class="num"><button class="iconbtn danger" @click="remover(m.id)"><Trash2 :size="13"/></button></td>
               </tr>
-              <tr v-if="!mov.movimentos.length"><td colspan="6" class="vazio">Nenhum movimento ainda.</td></tr>
+              <tr v-if="!mov.movimentos.length"><td colspan="7" class="vazio">Nenhum movimento ainda.</td></tr>
             </tbody>
           </table>
         </div>

@@ -257,6 +257,11 @@ export interface Lote {
   local: string | null;
   ativo: boolean;
   n_animais: number;
+  // metas por lote (null = usa o padrão da fazenda)
+  capacidade?: number | null;
+  dias_cocho?: number | null;
+  gmd_meta?: number | null;
+  rendimento_carcaca?: number | null;
 }
 
 export interface Animal {
@@ -272,6 +277,9 @@ export interface Animal {
   pai: string | null;
   origem: string | null;
   status: string;
+  tipo_matriz?: string | null;
+  desmama_data?: string | null;
+  desmama_peso?: number | null;
 }
 
 export interface Pesagem {
@@ -338,6 +346,7 @@ export const atualizarAnimal = (
   body: Partial<{
     brinco: string; lote_id: string | null; categoria: string; raca: string;
     sexo: string; data_nascimento: string | null; mae_brinco: string; pai: string; status: string;
+    tipo_matriz: string | null; desmama_data: string | null; desmama_peso: number | null;
   }>
 ) =>
   req<Animal>(`/animais/${animalId}`, {
@@ -586,7 +595,7 @@ export const registrarAplicacao = (
 export const excluirEventoSanitario = (id: string) => req<void>(`/sanitario/${id}`, { method: "DELETE" });
 
 // ---- Movimentação de animais ----
-export interface MovimentoAnimalItem { id: string; brinco: string; tipo: string; data: string; valor: number | null; motivo: string | null; }
+export interface MovimentoAnimalItem { id: string; brinco: string; tipo: string; data: string; valor: number | null; motivo: string | null; usuario_nome?: string | null; }
 export interface ResumoMovimentos { vendas_30d: number; mortes_30d: number; descartes_30d: number; compras_30d: number; movimentos: MovimentoAnimalItem[]; }
 export interface CategoriaComposicao { categoria: string; total: number; }
 export interface ComposicaoRebanho { total: number; femeas: number; machos: number; por_categoria: CategoriaComposicao[]; }
@@ -608,3 +617,145 @@ export function fmtValor(v: number | null, formato: Formato, casas: number): str
   if (formato === "dias") return v.toFixed(0) + " d";
   return v.toFixed(casas);
 }
+
+// --- Inventario / patrimonio (audios 10, 11 e 12) ---------------------------
+export type CategoriaItem = "maquina" | "equipamento" | "medicacao" | "insumo" | "outro";
+export const CATEGORIAS_ITEM: { valor: CategoriaItem; rotulo: string }[] = [
+  { valor: "maquina", rotulo: "Máquina" },
+  { valor: "equipamento", rotulo: "Equipamento" },
+  { valor: "medicacao", rotulo: "Medicação" },
+  { valor: "insumo", rotulo: "Insumo" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface ItemInventario {
+  id: string; fazenda_id: string; categoria: CategoriaItem; nome: string;
+  identificacao: string | null; localizacao: string | null;
+  quantidade: number | null; unidade: string | null; valor: number | null;
+  situacao: string; data_aquisicao: string | null; observacao: string | null;
+}
+export interface ResumoInventario {
+  total_itens: number; por_categoria: Record<string, number>;
+  valor_total: number; itens: ItemInventario[];
+}
+export interface MovimentoInventario {
+  id: string; item_id: string; tipo: string; data: string; quantidade: number | null;
+  origem: string | null; destino: string | null; fazenda_destino_id: string | null;
+  usuario_nome: string | null; observacao: string | null;
+}
+export const getInventario = (fazendaId: string) =>
+  req<ResumoInventario>(`/fazendas/${fazendaId}/inventario`);
+export const criarItemInventario = (fazendaId: string, body: Partial<ItemInventario>) =>
+  req<ItemInventario>(`/fazendas/${fazendaId}/inventario`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarItemInventario = (itemId: string, body: Partial<ItemInventario>) =>
+  req<ItemInventario>(`/inventario/${itemId}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const excluirItemInventario = (itemId: string) =>
+  req<void>(`/inventario/${itemId}`, { method: "DELETE" });
+export const getMovimentosItem = (itemId: string) =>
+  req<MovimentoInventario[]>(`/inventario/${itemId}/movimentos`);
+export const movimentarItem = (
+  itemId: string,
+  body: { tipo: string; data?: string; quantidade?: number | null; origem?: string; destino?: string; fazenda_destino_id?: string | null; observacao?: string }
+) => req<MovimentoInventario>(`/inventario/${itemId}/movimentos`, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
+
+// --- Desmame / matrizes (audio 7) -------------------------------------------
+export const TIPOS_MATRIZ = ["Nelore puro", "F1", "T-Cross", "Girolando", "Cruzada", "Outro"];
+export interface ResumoDesmama {
+  matrizes: number; bezerros: number; desmamados: number;
+  taxa_desmama: number | null; taxa_desmama_meta: number | null;
+  peso_medio_desmama: number | null; peso_desmama_meta: number | null;
+  por_tipo_matriz: Record<string, number>;
+}
+export const getDesmame = (fazendaId: string) =>
+  req<ResumoDesmama>(`/fazendas/${fazendaId}/desmame`);
+export const getBezerros = (animalId: string) => req<Animal[]>(`/animais/${animalId}/bezerros`);
+export const registrarDesmama = (animalId: string, peso: number, data?: string) =>
+  req<Animal>(`/animais/${animalId}/desmama`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ peso, data }),
+  });
+
+// --- Planejamento de atividades (audio 13) ----------------------------------
+export const PERIODOS = [
+  { valor: "semanal", rotulo: "Semanal" },
+  { valor: "mensal", rotulo: "Mensal" },
+  { valor: "anual", rotulo: "Anual" },
+];
+export const TIPOS_ATIVIDADE = [
+  { valor: "manejo_rebanho", rotulo: "Manejo de rebanho" },
+  { valor: "manejo_sanitario", rotulo: "Manejo sanitário" },
+  { valor: "pesagem", rotulo: "Pesagem de gado" },
+  { valor: "reproducao", rotulo: "Reprodução" },
+  { valor: "nutricao", rotulo: "Nutrição" },
+  { valor: "manutencao", rotulo: "Manutenção" },
+  { valor: "administrativo", rotulo: "Administrativo" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface Atividade {
+  id: string; fazenda_id: string; titulo: string; descricao: string | null;
+  tipo: string; periodo: string; data_prevista: string; status: string;
+  responsavel_id: string | null; responsavel_nome: string | null;
+  criado_por_nome: string | null; concluida_em: string | null;
+  concluida_por_nome: string | null; observacao_conclusao: string | null;
+}
+export interface ResumoPlanejamento {
+  total: number; abertas: number; concluidas: number; atrasadas: number;
+  da_semana: number; minhas_pendentes: number; taxa_conclusao: number | null;
+  por_periodo: Record<string, number>; atividades: Atividade[];
+}
+export const getPlanejamento = (fazendaId: string) =>
+  req<ResumoPlanejamento>(`/fazendas/${fazendaId}/planejamento`);
+export const criarAtividade = (fazendaId: string, body: Partial<Atividade>) =>
+  req<Atividade>(`/fazendas/${fazendaId}/planejamento`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarAtividade = (id: string, body: Partial<Atividade>) =>
+  req<Atividade>(`/planejamento/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const concluirAtividade = (id: string, observacao?: string) =>
+  req<Atividade>(`/planejamento/${id}/concluir`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ observacao }),
+  });
+export const excluirAtividade = (id: string) =>
+  req<void>(`/planejamento/${id}`, { method: "DELETE" });
+
+// --- Silagem como modulo proprio (audio 8) ----------------------------------
+export const TIPOS_SILAGEM = [
+  { valor: "milho", rotulo: "Milho" },
+  { valor: "sorgo", rotulo: "Sorgo" },
+  { valor: "capim", rotulo: "Capim" },
+  { valor: "cana", rotulo: "Cana" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface Silagem {
+  id: string; fazenda_id: string; nome: string; tipo: string;
+  data_ensilagem: string | null; ms_meta: number | null; ms_real: number | null;
+  umidade: number | null; temperatura: number | null;
+  quantidade_t: number | null; consumo_diario_t: number | null;
+  maquinario: string | null; destino: string | null; responsavel: string | null;
+  observacao: string | null; situacao: string;
+}
+export interface ResumoSilagem {
+  total_silos: number; silos_abertos: number; total_t: number;
+  consumo_diario_t: number | null; dias_estimados: number | null;
+  ms_media: number | null; ms_alvo: number | null;
+  fora_do_alvo: string[]; por_tipo: Record<string, number>; silos: Silagem[];
+}
+export const getSilagem = (fazendaId: string) =>
+  req<ResumoSilagem>(`/fazendas/${fazendaId}/silagem`);
+export const criarSilagem = (fazendaId: string, body: Partial<Silagem>) =>
+  req<Silagem>(`/fazendas/${fazendaId}/silagem`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarSilagem = (id: string, body: Partial<Silagem>) =>
+  req<Silagem>(`/silagem/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const excluirSilagem = (id: string) => req<void>(`/silagem/${id}`, { method: "DELETE" });

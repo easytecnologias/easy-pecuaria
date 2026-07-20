@@ -1,0 +1,63 @@
+# Ambiente de HOMOLOGAÇÃO (staging) — isolado da produção.
+# Containers, banco, volume, porta e rede próprios. Só LAN (sem túnel).
+#   docker compose -f docker-compose.staging.yml up -d --build
+# Web em http://<servidor>:8102
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: pecuaria-stg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pecuaria
+      POSTGRES_USER: pecuaria
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pecuaria-stg-pg-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"   # dev via túnel SSH (porta 5434, separada da prod)
+    networks: [pecuaria-stg-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pecuaria -d pecuaria"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+    container_name: pecuaria-stg-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://pecuaria:${POSTGRES_PASSWORD:-changeme}@postgres:5432/pecuaria
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@pecuaria.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8102}
+      EXPOSE_DOCS: ${EXPOSE_DOCS:-true}
+    networks:
+      pecuaria-stg-net:
+        # o nginx do web aponta para "pecuaria-api"; o alias faz isso resolver
+        # para o API de STAGING dentro desta rede (isolado da produção).
+        aliases:
+          - pecuaria-api
+
+  web:
+    build:
+      context: ./frontend
+    container_name: pecuaria-stg-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8102:80"
+    networks: [pecuaria-stg-net]
+
+volumes:
+  pecuaria-stg-pg-data:
+
+networks:
+  pecuaria-stg-net:
+    driver: bridge

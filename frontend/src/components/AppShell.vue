@@ -50,6 +50,7 @@ const grupos = [
       { to: "/painel", label: "Painel", emoji: "📊", match: ["/painel"] },
       { to: "/alertas", label: "Alertas", emoji: "🔔" },
       { to: "/relatorios", label: "Relatórios", emoji: "📄" },
+      { to: "/planejamento", label: "Planejamento", emoji: "🗓️" },
     ],
   },
   {
@@ -66,6 +67,7 @@ const grupos = [
     itens: [
       { to: "/reproducao", label: "Reprodução", emoji: "🧬" },
       { to: "/partos", label: "Partos", emoji: "🐣" },
+      { to: "/desmame", label: "Desmame", emoji: "🍼" },
     ],
   },
   {
@@ -80,6 +82,7 @@ const grupos = [
     itens: [
       { to: "/nutricao", label: "Nutrição", emoji: "🥗" },
       { to: "/estoque", label: "Estoque", emoji: "🌽" },
+      { to: "/silagem", label: "Silagem", emoji: "🌾" },
     ],
   },
   {
@@ -93,6 +96,7 @@ const grupos = [
     titulo: "Ajustes",
     itens: [
       { to: "/fazendas", label: "Fazendas", emoji: "🏡", match: ["/fazendas"] },
+      { to: "/inventario", label: "Inventário", emoji: "📦" },
       { to: "/metas", label: "Metas", emoji: "🎯" },
       { to: "/admin", label: "Administração", emoji: "⚙️", adminOnly: true },
     ],

@@ -29,3 +29,8 @@ class MovimentoAnimal(Base):
         ForeignKey("lote.id", ondelete="SET NULL")
     )  # transferência
     observacao: Mapped[str | None] = mapped_column(String(200))
+    # rastreabilidade — quem movimentou (audio 12)
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("usuario.id", ondelete="SET NULL")
+    )
+    usuario_nome: Mapped[str | None] = mapped_column(String(160))  # desnormalizado

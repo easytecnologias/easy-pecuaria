@@ -157,12 +157,21 @@ class LoteOut(BaseModel):
     local: str | None
     ativo: bool
     n_animais: int = 0
+    # metas por lote (None = usa o padrao da fazenda)
+    capacidade: int | None = None
+    dias_cocho: int | None = None
+    gmd_meta: float | None = None
+    rendimento_carcaca: float | None = None
 
 
 class LoteIn(BaseModel):
     nome: str
     categoria: str | None = None
     local: str | None = None
+    capacidade: int | None = None
+    dias_cocho: int | None = None
+    gmd_meta: float | None = None
+    rendimento_carcaca: float | None = None
 
 
 class AnimalOut(BaseModel):
@@ -179,6 +188,9 @@ class AnimalOut(BaseModel):
     pai: str | None
     origem: str | None
     status: str
+    tipo_matriz: str | None = None
+    desmama_data: date | None = None
+    desmama_peso: float | None = None
 
 
 class AnimalIn(BaseModel):
@@ -191,6 +203,9 @@ class AnimalIn(BaseModel):
     mae_brinco: str | None = None
     pai: str | None = None
     origem: str | None = None
+    tipo_matriz: str | None = None
+    desmama_data: date | None = None
+    desmama_peso: float | None = None
 
 
 class AnimalUpdateIn(BaseModel):
@@ -203,12 +218,19 @@ class AnimalUpdateIn(BaseModel):
     mae_brinco: str | None = None
     pai: str | None = None
     status: str | None = None
+    tipo_matriz: str | None = None
+    desmama_data: date | None = None
+    desmama_peso: float | None = None
 
 
 class LoteUpdateIn(BaseModel):
     nome: str | None = None
     categoria: str | None = None
     local: str | None = None
+    capacidade: int | None = None
+    dias_cocho: int | None = None
+    gmd_meta: float | None = None
+    rendimento_carcaca: float | None = None
 
 
 class PesagemOut(BaseModel):
@@ -473,6 +495,7 @@ class MovimentoAnimalItem(BaseModel):
     data: date
     valor: float | None
     motivo: str | None
+    usuario_nome: str | None = None  # quem movimentou (audio 12)
 
 
 class ResumoMovimentos(BaseModel):
@@ -694,3 +717,162 @@ class RelatorioPesagem(BaseModel):
     gmd_medio: float | None
     arroba_media: float | None
     animais: list[PesagemRelItem]
+
+
+# --- Inventario / patrimonio (audio 10 e 11) --------------------------------
+class ItemInventarioIn(BaseModel):
+    categoria: str
+    nome: str
+    identificacao: str | None = None
+    localizacao: str | None = None
+    quantidade: float | None = None
+    unidade: str | None = None
+    valor: float | None = None
+    situacao: str = "ativo"
+    data_aquisicao: date | None = None
+    observacao: str | None = None
+
+
+class ItemInventarioOut(ItemInventarioIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    fazenda_id: uuid.UUID
+
+
+class MovimentoInventarioIn(BaseModel):
+    tipo: str  # entrada | saida | transferencia
+    data: date | None = None
+    quantidade: float | None = None
+    origem: str | None = None
+    destino: str | None = None
+    fazenda_destino_id: uuid.UUID | None = None
+    observacao: str | None = None
+
+
+class MovimentoInventarioOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    item_id: uuid.UUID
+    tipo: str
+    data: date
+    quantidade: float | None
+    origem: str | None
+    destino: str | None
+    fazenda_destino_id: uuid.UUID | None
+    usuario_nome: str | None   # quem movimentou (audio 12)
+    observacao: str | None
+
+
+class ResumoInventario(BaseModel):
+    total_itens: int
+    por_categoria: dict[str, int]
+    valor_total: float
+    itens: list[ItemInventarioOut]
+
+
+# --- Desmame (audio 7) ------------------------------------------------------
+class DesmamaIn(BaseModel):
+    data: date | None = None
+    peso: float
+
+
+class ResumoDesmama(BaseModel):
+    matrizes: int
+    bezerros: int
+    desmamados: int
+    taxa_desmama: float | None
+    taxa_desmama_meta: float | None
+    peso_medio_desmama: float | None
+    peso_desmama_meta: float | None
+    por_tipo_matriz: dict[str, int]
+
+
+# --- Planejamento de atividades (audio 13) ----------------------------------
+class AtividadeIn(BaseModel):
+    titulo: str
+    descricao: str | None = None
+    tipo: str = "outro"
+    periodo: str = "semanal"
+    data_prevista: date
+    responsavel_id: uuid.UUID | None = None
+
+
+class AtividadeUpdateIn(BaseModel):
+    titulo: str | None = None
+    descricao: str | None = None
+    tipo: str | None = None
+    periodo: str | None = None
+    data_prevista: date | None = None
+    responsavel_id: uuid.UUID | None = None
+    status: str | None = None
+
+
+class AtividadeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    fazenda_id: uuid.UUID
+    titulo: str
+    descricao: str | None
+    tipo: str
+    periodo: str
+    data_prevista: date
+    status: str
+    responsavel_id: uuid.UUID | None
+    responsavel_nome: str | None
+    criado_por_nome: str | None
+    concluida_em: datetime | None
+    concluida_por_nome: str | None
+    observacao_conclusao: str | None
+
+
+class ConcluirAtividadeIn(BaseModel):
+    observacao: str | None = None
+
+
+class ResumoPlanejamento(BaseModel):
+    total: int
+    abertas: int
+    concluidas: int
+    atrasadas: int
+    da_semana: int
+    minhas_pendentes: int
+    taxa_conclusao: float | None
+    por_periodo: dict[str, int]
+    atividades: list[AtividadeOut]
+
+
+# --- Silagem como modulo proprio (audio 8) ----------------------------------
+class SilagemIn(BaseModel):
+    nome: str
+    tipo: str
+    data_ensilagem: date | None = None
+    ms_meta: float | None = None
+    ms_real: float | None = None
+    umidade: float | None = None
+    temperatura: float | None = None
+    quantidade_t: float | None = None
+    consumo_diario_t: float | None = None
+    maquinario: str | None = None
+    destino: str | None = None
+    responsavel: str | None = None
+    observacao: str | None = None
+    situacao: str = "aberto"
+
+
+class SilagemOut(SilagemIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    fazenda_id: uuid.UUID
+
+
+class ResumoSilagem(BaseModel):
+    total_silos: int
+    silos_abertos: int
+    total_t: float
+    consumo_diario_t: float | None
+    dias_estimados: int | None
+    ms_media: float | None
+    ms_alvo: float | None
+    fora_do_alvo: list[str]
+    por_tipo: dict[str, float]
+    silos: list[SilagemOut]

@@ -1,0 +1,25 @@
+# Normalização de fim de linha.
+# O repositório roda em Linux (Docker). O deploy usa `git archive`, que em
+# máquinas Windows com core.autocrlf=true exportava CRLF — isso quebra o
+# entrypoint.sh no container ("bad interpreter"). Fixar eol=lf garante que
+# qualquer clone/export produza LF, independente da config local de quem roda.
+* text=auto eol=lf
+
+# Scripts que o container executa: LF é obrigatório.
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binários: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.ogg binary
