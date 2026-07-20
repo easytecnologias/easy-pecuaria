@@ -26,11 +26,13 @@ STATUS_POR_TIPO = {
 
 def registrar_movimento(
     db: Session, animal: Animal, tipo: str, data_ref: date, valor: float | None,
-    motivo: str | None, lote_destino_id, obs: str | None,
+    motivo: str | None, lote_destino_id, obs: str | None, usuario=None,
 ) -> MovimentoAnimal:
     m = MovimentoAnimal(
         fazenda_id=animal.fazenda_id, animal_id=animal.id, tipo=tipo, data=data_ref,
         valor=valor, motivo=motivo, lote_destino_id=lote_destino_id, observacao=obs,
+        usuario_id=getattr(usuario, "id", None),
+        usuario_nome=getattr(usuario, "nome", None) or getattr(usuario, "email", None),
     )
     db.add(m)
     if tipo in STATUS_POR_TIPO:
@@ -68,7 +70,8 @@ def resumo_movimentos(db: Session, fazenda: Fazenda) -> dict:
         "compras_30d": conta("compra", d30),
         "movimentos": [
             {"id": m.id, "brinco": brinco, "tipo": m.tipo, "data": m.data,
-             "valor": float(m.valor) if m.valor is not None else None, "motivo": m.motivo}
+             "valor": float(m.valor) if m.valor is not None else None, "motivo": m.motivo,
+             "usuario_nome": m.usuario_nome}
             for m, brinco in movimentos
         ],
     }

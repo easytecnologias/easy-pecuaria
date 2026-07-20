@@ -7,11 +7,13 @@ from app.api.routers import (
     alertas,
     auth,
     dashboard,
+    desmame,
     escore,
     estoque,
     fazendas,
     financeiro,
     indicadores,
+    inventario,
     mercado,
     movimento,
     nutricao,
@@ -59,6 +61,8 @@ app.include_router(mercado.router)
 app.include_router(sanitario.router)
 app.include_router(movimento.router)
 app.include_router(parto.router)
+app.include_router(inventario.router)
+app.include_router(desmame.router)
 
 
 @app.get("/health", tags=["infra"])

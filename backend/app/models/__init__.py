@@ -9,6 +9,7 @@ from app.models.parametro import Parametro
 from app.models.escore import EscoreCorporal
 from app.models.estoque import MovimentoVolumoso
 from app.models.financeiro import LancamentoFinanceiro
+from app.models.inventario import ItemInventario, MovimentoInventario
 from app.models.mercado import CotacaoArroba, CotacaoInsumo
 from app.models.movimento import MovimentoAnimal
 from app.models.nutricao import Dieta, ItemDieta
@@ -44,4 +45,6 @@ __all__ = [
     "CotacaoInsumo",
     "EventoSanitario",
     "MovimentoAnimal",
+    "ItemInventario",
+    "MovimentoInventario",
 ]

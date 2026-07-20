@@ -37,10 +37,12 @@ PREMISSAS = [
     ("Rebanho", "taxa_desmama_meta", "Taxa de desmama meta", 0.76, "%"),
     ("Rebanho", "peso_desmama", "Peso medio desmama", 220, "kg"),
     ("Confinamento", "capacidade_confinamento", "Capacidade inicial", 300, "cab/ciclo"),
+    ("Confinamento", "quantidade_lotes", "Quantidade de lotes", 4, "lotes"),
+    ("Confinamento", "espaco_por_lote", "Espaco por lote", 75, "cab/lote"),
     ("Confinamento", "ciclos_ano", "Ciclos por ano", 2, "ciclos"),
-    ("Confinamento", "dias_cocho", "Dias de cocho", 105, "dias"),
-    ("Confinamento", "gmd_meta", "GMD meta", 1.55, "kg/dia"),
-    ("Confinamento", "rendimento_carcaca", "Rendimento de carcaca", 0.55, "%"),
+    ("Confinamento", "dias_cocho", "Dias de cocho (padrao)", 105, "dias"),
+    ("Confinamento", "gmd_meta", "GMD meta (padrao)", 1.55, "kg/dia"),
+    ("Confinamento", "rendimento_carcaca", "Rendimento de carcaca (padrao)", 0.55, "%"),
     ("Mercado", "arroba_base", "Arroba projetada base", 310, "R$/@"),
     ("Mercado", "arroba_ruim", "Arroba cenario ruim", 265, "R$/@"),
     ("Mercado", "arroba_favoravel", "Arroba cenario favoravel", 350, "R$/@"),
@@ -65,6 +67,8 @@ INDICADORES = [
     ("arroba_recebida", "Arroba recebida", "Mercado", "R$/@", FormatoIndicador.moeda, 2),
     ("margem_cab", "Margem por cabeca", "Financeiro", "R$", FormatoIndicador.moeda, 2),
     ("capital_giro_dias", "Capital de giro", "Financeiro", "dias", FormatoIndicador.dias, 0),
+    ("peso_desmama_real", "Peso medio de desmama", "Reproducao", "kg", FormatoIndicador.numero, 1),
+    ("taxa_desmama", "Taxa de desmama", "Reproducao", "%", FormatoIndicador.percentual, 2),
 ]
 
 # --- Regras de gatilho (aba 'Dashboard' -> colunas Regra/Acao) --------------
@@ -91,6 +95,12 @@ REGRAS = [
     ("capital_giro_dias", "Capital de giro abaixo do minimo", Operador.lt,
      TipoReferencia.parametro, None, "capital_giro_min", None, Severidade.alerta,
      "Reforcar caixa antes de qualquer expansao."),
+    ("peso_desmama_real", "Peso de desmama abaixo da meta", Operador.lt,
+     TipoReferencia.parametro, None, "peso_desmama", None, Severidade.revisar,
+     "Revisar suplementacao de cria, sanidade do bezerro e ECC da matriz."),
+    ("taxa_desmama", "Taxa de desmama abaixo da meta", Operador.lt,
+     TipoReferencia.parametro, None, "taxa_desmama_meta", None, Severidade.alerta,
+     "Investigar perda de bezerro entre nascimento e desmama."),
 ]
 
 # --- Valores de exemplo para a Fazenda Sede (mix de OK/alerta) --------------

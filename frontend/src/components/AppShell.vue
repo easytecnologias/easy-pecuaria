@@ -66,6 +66,7 @@ const grupos = [
     itens: [
       { to: "/reproducao", label: "Reprodução", emoji: "🧬" },
       { to: "/partos", label: "Partos", emoji: "🐣" },
+      { to: "/desmame", label: "Desmame", emoji: "🍼" },
     ],
   },
   {
@@ -93,6 +94,7 @@ const grupos = [
     titulo: "Ajustes",
     itens: [
       { to: "/fazendas", label: "Fazendas", emoji: "🏡", match: ["/fazendas"] },
+      { to: "/inventario", label: "Inventário", emoji: "📦" },
       { to: "/metas", label: "Metas", emoji: "🎯" },
       { to: "/admin", label: "Administração", emoji: "⚙️", adminOnly: true },
     ],

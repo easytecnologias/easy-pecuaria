@@ -57,7 +57,7 @@ def novo_movimento(
     faz = get_fazenda_no_escopo(animal.fazenda_id, db, user)
     m = registrar_movimento(
         db, animal, body.tipo, body.data or date.today(), body.valor,
-        body.motivo, body.lote_destino_id, body.observacao,
+        body.motivo, body.lote_destino_id, body.observacao, usuario=user,
     )
     recomputar_indicadores_rebanho(db, faz)
     return {"ok": True, "id": str(m.id), "novo_status": animal.status}
