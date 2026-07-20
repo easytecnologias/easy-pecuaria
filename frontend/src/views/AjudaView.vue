@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { PlayCircle } from "lucide-vue-next";
 import AppShell from "../components/AppShell.vue";
 import Panel from "../components/Panel.vue";
+import { TRILHAS, iniciarTour } from "../tour";
 
 const passos = [
   { n: "1", titulo: "Evento (campo)", valor: "Pesagem: 470 kg", sub: "Garrotes Confinamento · hoje" },
@@ -25,6 +27,23 @@ const alimenta = [
       <h1>Do dado ao alerta</h1>
       <p>É esta a ideia do sistema inteiro. A equipe anota fatos simples no campo; o sistema calcula os indicadores, compara com as metas da fazenda e avisa quando algo precisa de decisão. Você nunca digita "indicador".</p>
     </div>
+
+    <Panel title="Passo a passo no sistema" sub="o guia acontece na tela real, destacando cada botão">
+      <div class="trilhas">
+        <button v-for="t in TRILHAS" :key="t.id" class="trilha" @click="iniciarTour(t.id)">
+          <span class="trilha__emoji">{{ t.emoji }}</span>
+          <span class="trilha__txt">
+            <b>{{ t.nome }}</b>
+            <span class="muted">{{ t.publico }} · {{ t.passos.length }} passos · {{ t.duracao }}</span>
+          </span>
+          <PlayCircle :size="20" class="trilha__play" />
+        </button>
+      </div>
+      <p class="muted nota">
+        Pode parar no meio e recomeçar quando quiser. O guia não altera nenhum dado —
+        ele só mostra onde ficam as coisas.
+      </p>
+    </Panel>
 
     <Panel>
       <div class="flow">
@@ -70,6 +89,20 @@ const alimenta = [
 </template>
 
 <style scoped>
+/* trilhas do tour guiado */
+.trilhas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.trilha {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); cursor: pointer; font: inherit; color: inherit;
+  transition: border-color .15s, transform .15s;
+}
+.trilha:hover { border-color: var(--primary); transform: translateY(-1px); }
+.trilha__emoji { font-size: 22px; }
+.trilha__txt { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.trilha__txt .muted { font-size: 12px; }
+.trilha__play { color: var(--primary); flex-shrink: 0; }
+.nota { font-size: 12.5px; margin-top: 12px; }
 .flow { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; padding: 6px 0; }
 .step { flex: 1; min-width: 150px; background: #f7fafb; border: 1px solid var(--border); border-radius: 9px; padding: 12px; }
 .step.alerta { background: #fdf3f3; border-color: #f0c9c9; }

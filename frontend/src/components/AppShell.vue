@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { LogOut, RefreshCw, Plus, Menu, KeyRound } from "lucide-vue-next";
 import { clearToken, getMeCached, trocarMinhaSenha, refreshTokenThrottled } from "../api";
 import Modal from "./Modal.vue";
+import TourGuiado from "./TourGuiado.vue";
+import { iniciarTour, jaViuTour, trilhaDoPapel } from "../tour";
 
 defineProps<{ title: string; sub?: string }>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -22,6 +24,12 @@ onMounted(async () => {
   try { const u = await getMeCached(); papel.value = u.papel; superadmin.value = !!u.is_superadmin; }
   catch { /* ignora */ }
   refreshTokenThrottled().catch(() => { /* sessão desliza silenciosamente */ });
+
+  // primeiro acesso: abre o passo a passo da trilha do papel do usuário.
+  // Só uma vez — depois fica disponível em "Como funciona".
+  if (!jaViuTour() && route.path === "/painel") {
+    setTimeout(() => iniciarTour(trilhaDoPapel(papel.value)), 900);
+  }
 });
 
 // troca da própria senha (auto-serviço)
@@ -135,6 +143,7 @@ function sair() {
 
 <template>
   <div class="app-shell">
+    <TourGuiado />
     <div class="sidebar-backdrop" v-if="menuAberto" @click="menuAberto = false" />
     <aside class="sidebar" :class="{ 'sidebar--open': menuAberto }">
       <div class="sidebar__brand">
