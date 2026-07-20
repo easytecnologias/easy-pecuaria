@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { LogOut, RefreshCw, Plus, Menu, KeyRound } from "lucide-vue-next";
+import { LogOut, RefreshCw, Plus, Menu, KeyRound, HelpCircle } from "lucide-vue-next";
 import { clearToken, getMeCached, trocarMinhaSenha, refreshTokenThrottled } from "../api";
 import Modal from "./Modal.vue";
 import TourGuiado from "./TourGuiado.vue";
-import { iniciarTour, jaViuTour, trilhaDoPapel } from "../tour";
+import { iniciarTour, iniciarTourDaTela, jaViuTour, telaTemTour, trilhaDoPapel } from "../tour";
 
 defineProps<{ title: string; sub?: string }>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -15,6 +15,9 @@ const router = useRouter();
 
 const menuAberto = ref(false);
 watch(() => route.fullPath, () => { menuAberto.value = false; });
+
+// o botao "Como usar" so aparece nas telas que tem passo a passo proprio
+const temTourDaTela = computed(() => telaTemTour(route.path));
 
 // papel do usuário logado — para exibir itens só de administrador
 const papel = ref("");
@@ -194,6 +197,15 @@ function sair() {
           </div>
         </div>
         <div class="topbar__actions">
+          <!-- ajuda da tela onde a pessoa esta, nao um manual generico -->
+          <button
+            v-if="temTourDaTela"
+            class="btn btn--secondary ajuda"
+            :title="`Como usar: ${title}`"
+            @click="iniciarTourDaTela(route.path, title)"
+          >
+            <HelpCircle :size="16" /> <span class="ajuda__txt">Como usar</span>
+          </button>
           <button class="btn btn--secondary" @click="emit('refresh')">
             <RefreshCw :size="16" /> <span>Atualizar</span>
           </button>
@@ -236,6 +248,11 @@ function sair() {
 </template>
 
 <style scoped>
+/* no celular a barra fica apertada: mantem o ícone, esconde a palavra */
+@media (max-width: 640px) {
+  .ajuda__txt { display: none; }
+  .ajuda { padding: 0 10px; }
+}
 .nav__emoji { width: 20px; text-align: center; font-size: 16px; line-height: 1; }
 .senha-form { display: flex; flex-direction: column; gap: 13px; }
 .sfield { display: grid; gap: 6px; }
