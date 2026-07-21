@@ -15,6 +15,7 @@ from app.api.routers import (
     indicadores,
     inventario,
     mercado,
+    conta,
     movimento,
     nutricao,
     parto,
@@ -67,6 +68,7 @@ app.include_router(inventario.router)
 app.include_router(desmame.router)
 app.include_router(planejamento.router)
 app.include_router(silagem.router)
+app.include_router(conta.router)
 
 
 @app.get("/health", tags=["infra"])

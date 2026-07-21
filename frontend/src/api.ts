@@ -550,6 +550,67 @@ export const criarDieta = (
 });
 export const excluirDieta = (id: string) => req<void>(`/dietas/${id}`, { method: "DELETE" });
 
+// --- Quadro de custo por dieta (audio 2) ------------------------------------
+export interface InsumoDaDieta {
+  ingrediente: string; inclusao_kg: number; preco_kg: number;
+  custo_cab_dia: number; pct_custo: number | null;
+}
+export interface DietaNoQuadro {
+  id: string; nome: string; lote_nome: string | null; cabecas: number;
+  custo_cab_dia: number; custo_dia_lote: number | null;
+  kg_ms: number; consumo_ms_pv: number | null; insumos: InsumoDaDieta[];
+}
+export interface ResumoDietas {
+  total_dietas: number; cabecas_atendidas: number;
+  custo_medio: number | null; custo_medio_ponderado: number | null;
+  custo_total_dia: number | null;
+  mais_cara: string | null; mais_barata: string | null;
+  dietas: DietaNoQuadro[];
+}
+export const getQuadroDietas = (fazendaId: string) =>
+  req<ResumoDietas>(`/fazendas/${fazendaId}/dietas/quadro`);
+
+// --- Contas a pagar / a receber (audio 9) -----------------------------------
+export const TIPOS_CONTA = [
+  { valor: "pagar", rotulo: "A pagar" },
+  { valor: "receber", rotulo: "A receber" },
+];
+export const TIPOS_DOCUMENTO = [
+  { valor: "duplicata", rotulo: "Duplicata" },
+  { valor: "boleto", rotulo: "Boleto" },
+  { valor: "nota", rotulo: "Nota fiscal" },
+  { valor: "recibo", rotulo: "Recibo" },
+  { valor: "outro", rotulo: "Outro" },
+];
+export interface Conta {
+  id: string; tipo: string; descricao: string; categoria: string;
+  contraparte: string | null; documento: string; numero_documento: string | null;
+  valor: number; emissao: string | null; vencimento: string;
+  status: string; situacao: string; dias: number;
+  data_baixa: string | null; valor_pago: number | null; observacao: string | null;
+}
+export interface ResumoContas {
+  total_a_pagar: number; total_a_receber: number; saldo_previsto: number;
+  vencidas: number; valor_vencido: number;
+  vencendo: number; valor_vencendo: number;
+  janela_aviso_dias: number; avisos: string[]; contas: Conta[];
+}
+export const getContas = (fazendaId: string) =>
+  req<ResumoContas>(`/fazendas/${fazendaId}/contas`);
+export const criarConta = (fazendaId: string, body: Partial<Conta>) =>
+  req<Conta>(`/fazendas/${fazendaId}/contas`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const editarConta = (id: string, body: Partial<Conta>) =>
+  req<Conta>(`/contas/${id}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const baixarConta = (id: string, body: { data_baixa?: string; valor_pago?: number }) =>
+  req<Conta>(`/contas/${id}/baixar`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+export const excluirConta = (id: string) => req<void>(`/contas/${id}`, { method: "DELETE" });
+
 // ---- Mercado & custos ----
 export interface CotacaoArroba {
   id: string; data: string; valor: number; origem: string; fonte: string | null;
@@ -739,6 +800,7 @@ export interface Silagem {
   data_ensilagem: string | null; ms_meta: number | null; ms_real: number | null;
   umidade: number | null; temperatura: number | null;
   quantidade_t: number | null; consumo_diario_t: number | null;
+  estoque_seguranca_t: number | null;
   maquinario: string | null; destino: string | null; responsavel: string | null;
   observacao: string | null; situacao: string;
 }
@@ -746,7 +808,9 @@ export interface ResumoSilagem {
   total_silos: number; silos_abertos: number; total_t: number;
   consumo_diario_t: number | null; dias_estimados: number | null;
   ms_media: number | null; ms_alvo: number | null;
-  fora_do_alvo: string[]; por_tipo: Record<string, number>; silos: Silagem[];
+  fora_do_alvo: string[]; abaixo_seguranca: string[];
+  estoque_seguranca_t: number | null; dias_ate_seguranca: number | null;
+  por_tipo: Record<string, number>; silos: Silagem[];
 }
 export const getSilagem = (fazendaId: string) =>
   req<ResumoSilagem>(`/fazendas/${fazendaId}/silagem`);

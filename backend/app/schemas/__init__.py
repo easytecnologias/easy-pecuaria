@@ -387,6 +387,38 @@ class DietaOut(BaseModel):
     peso_medio_lote: float | None
 
 
+# --- Custo por dieta / quadro comparativo (audio 2) -------------------------
+class InsumoDaDieta(BaseModel):
+    ingrediente: str
+    inclusao_kg: float
+    preco_kg: float
+    custo_cab_dia: float
+    pct_custo: float | None
+
+
+class DietaNoQuadro(BaseModel):
+    id: uuid.UUID
+    nome: str
+    lote_nome: str | None
+    cabecas: int
+    custo_cab_dia: float
+    custo_dia_lote: float | None
+    kg_ms: float
+    consumo_ms_pv: float | None
+    insumos: list[InsumoDaDieta]
+
+
+class ResumoDietas(BaseModel):
+    total_dietas: int
+    cabecas_atendidas: int
+    custo_medio: float | None
+    custo_medio_ponderado: float | None
+    custo_total_dia: float | None
+    mais_cara: str | None
+    mais_barata: str | None
+    dietas: list[DietaNoQuadro]
+
+
 # --- Mercado & custos -------------------------------------------------------
 class CotacaoArrobaIn(BaseModel):
     valor: float
@@ -852,6 +884,7 @@ class SilagemIn(BaseModel):
     temperatura: float | None = None
     quantidade_t: float | None = None
     consumo_diario_t: float | None = None
+    estoque_seguranca_t: float | None = None   # audio 3
     maquinario: str | None = None
     destino: str | None = None
     responsavel: str | None = None
@@ -874,5 +907,59 @@ class ResumoSilagem(BaseModel):
     ms_media: float | None
     ms_alvo: float | None
     fora_do_alvo: list[str]
+    abaixo_seguranca: list[str]          # audio 3
+    estoque_seguranca_t: float | None
+    dias_ate_seguranca: int | None
     por_tipo: dict[str, float]
     silos: list[SilagemOut]
+
+
+# --- Contas a pagar / a receber (audio 9) -----------------------------------
+class ContaIn(BaseModel):
+    tipo: str                       # pagar | receber
+    descricao: str
+    categoria: str
+    contraparte: str | None = None
+    documento: str = "outro"        # duplicata | boleto | nota | recibo | outro
+    numero_documento: str | None = None
+    valor: float
+    emissao: date | None = None
+    vencimento: date
+    observacao: str | None = None
+
+
+class ContaOut(BaseModel):
+    id: uuid.UUID
+    tipo: str
+    descricao: str
+    categoria: str
+    contraparte: str | None
+    documento: str
+    numero_documento: str | None
+    valor: float
+    emissao: date | None
+    vencimento: date
+    status: str
+    situacao: str                   # vencida | vence_em_breve | em_dia | baixado | cancelado
+    dias: int                       # negativo = ja venceu
+    data_baixa: date | None
+    valor_pago: float | None
+    observacao: str | None
+
+
+class BaixaIn(BaseModel):
+    data_baixa: date | None = None
+    valor_pago: float | None = None
+
+
+class ResumoContas(BaseModel):
+    total_a_pagar: float
+    total_a_receber: float
+    saldo_previsto: float
+    vencidas: int
+    valor_vencido: float
+    vencendo: int
+    valor_vencendo: float
+    janela_aviso_dias: int
+    avisos: list[str]
+    contas: list[ContaOut]

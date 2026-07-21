@@ -10,8 +10,8 @@ from app.core.deps import get_current_user, get_fazenda_no_escopo
 from app.models.nutricao import Dieta, ItemDieta
 from app.models.rebanho import Lote
 from app.models.usuario import Usuario
-from app.schemas import DietaIn, DietaOut, ItemDietaOut
-from app.services.nutricao import calcular_dieta, recomputar_indicadores_dieta
+from app.schemas import DietaIn, DietaOut, ItemDietaOut, ResumoDietas
+from app.services.nutricao import calcular_dieta, recomputar_indicadores_dieta, resumo_dietas
 
 router = APIRouter(tags=["nutricao"])
 
@@ -42,6 +42,17 @@ def listar_dietas(
         select(Dieta).where(Dieta.fazenda_id == faz.id).order_by(Dieta.data.desc())
     ).scalars().all()
     return [_out(db, d) for d in dietas]
+
+
+@router.get("/fazendas/{fazenda_id}/dietas/quadro", response_model=ResumoDietas)
+def quadro_de_custo(
+    fazenda_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+) -> ResumoDietas:
+    """Custo de cada dieta, custo medio e peso de cada insumo (audio 2)."""
+    faz = get_fazenda_no_escopo(fazenda_id, db, user)
+    return ResumoDietas.model_validate(resumo_dietas(db, faz))
 
 
 @router.post("/fazendas/{fazenda_id}/dietas", response_model=DietaOut, status_code=201)

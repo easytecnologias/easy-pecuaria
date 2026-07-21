@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.models.nutricao import Dieta
 from app.models.organizacao import Fazenda
-from app.models.rebanho import Animal, Pesagem
+from app.models.rebanho import Animal, Lote, Pesagem
 from app.services.gatilhos import sincronizar_alertas
 from app.services.indicador_util import upsert_indicador
 
@@ -46,6 +46,77 @@ def calcular_dieta(db: Session, dieta: Dieta) -> dict:
         "kg_mn": round(kg_mn, 3),
         "peso_medio_lote": round(peso, 1) if peso else None,
         "consumo_ms_pv": consumo_ms_pv,
+    }
+
+
+def _cabecas_do_lote(db: Session, lote_id) -> int:
+    if lote_id is None:
+        return 0
+    return int(db.execute(
+        select(func.count(Animal.id)).where(
+            Animal.lote_id == lote_id, Animal.status == "ativo"
+        )
+    ).scalar_one() or 0)
+
+
+def resumo_dietas(db: Session, fazenda: Fazenda) -> dict:
+    """Quadro comparativo das dietas da fazenda (audio 2 do cliente).
+
+    "eu tenho tres dietas hoje... a gente lanca o custo de cada dieta e a gente
+    faz o custo medio". O custo medio ponderado usa as cabecas de cada lote —
+    uma dieta cara num lote de 20 animais pesa menos que uma barata em 300.
+    """
+    dietas = list(db.execute(
+        select(Dieta).where(Dieta.fazenda_id == fazenda.id, Dieta.ativa.is_(True))
+        .order_by(Dieta.data.desc())
+    ).scalars())
+
+    linhas: list[dict] = []
+    for d in dietas:
+        calc = calcular_dieta(db, d)
+        cabecas = _cabecas_do_lote(db, d.lote_id)
+        custo = calc["custo_cab_dia"]
+        # custo de cada insumo dentro da dieta — o "quanto cada ingrediente pesa"
+        insumos = [
+            {
+                "ingrediente": i.ingrediente,
+                "inclusao_kg": round(float(i.inclusao_kg), 3),
+                "preco_kg": round(float(i.preco_kg), 4),
+                "custo_cab_dia": round(float(i.inclusao_kg) * float(i.preco_kg), 2),
+                "pct_custo": round(
+                    float(i.inclusao_kg) * float(i.preco_kg) / custo, 4
+                ) if custo else None,
+            }
+            for i in d.itens
+        ]
+        insumos.sort(key=lambda x: x["custo_cab_dia"], reverse=True)
+        linhas.append({
+            "id": d.id,
+            "nome": d.nome,
+            "lote_nome": (db.get(Lote, d.lote_id).nome if d.lote_id else None),
+            "cabecas": cabecas,
+            "custo_cab_dia": custo,
+            "custo_dia_lote": round(custo * cabecas, 2) if cabecas else None,
+            "kg_ms": calc["kg_ms"],
+            "consumo_ms_pv": calc["consumo_ms_pv"],
+            "insumos": insumos,
+        })
+
+    custos = [l["custo_cab_dia"] for l in linhas]
+    total_cab = sum(l["cabecas"] for l in linhas)
+    custo_total_dia = sum(
+        l["custo_cab_dia"] * l["cabecas"] for l in linhas if l["cabecas"]
+    )
+
+    return {
+        "total_dietas": len(linhas),
+        "cabecas_atendidas": total_cab,
+        "custo_medio": round(sum(custos) / len(custos), 2) if custos else None,
+        "custo_medio_ponderado": round(custo_total_dia / total_cab, 2) if total_cab else None,
+        "custo_total_dia": round(custo_total_dia, 2) if custo_total_dia else None,
+        "mais_cara": max(linhas, key=lambda l: l["custo_cab_dia"])["nome"] if linhas else None,
+        "mais_barata": min(linhas, key=lambda l: l["custo_cab_dia"])["nome"] if linhas else None,
+        "dietas": linhas,
     }
 
 

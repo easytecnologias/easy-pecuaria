@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Utensils, Plus, Trash2, X } from "lucide-vue-next";
+import { Utensils, Plus, Trash2, X, Coins, Users, ChevronRight } from "lucide-vue-next";
 import AppShell from "../components/AppShell.vue";
 import Panel from "../components/Panel.vue";
 import KpiCard from "../components/KpiCard.vue";
 import Modal from "../components/Modal.vue";
 import {
-  getFazendas, getLotes, getDietas, criarDieta, excluirDieta,
-  type Fazenda, type Lote, type Dieta, type ItemDieta,
+  getFazendas, getLotes, getDietas, criarDieta, excluirDieta, getQuadroDietas,
+  type Fazenda, type Lote, type Dieta, type ItemDieta, type ResumoDietas,
 } from "../api";
 
 const META_CUSTO = 13.5;
@@ -15,7 +15,10 @@ const fazendas = ref<Fazenda[]>([]);
 const fazendaId = ref("");
 const lotes = ref<Lote[]>([]);
 const dietas = ref<Dieta[]>([]);
+const quadro = ref<ResumoDietas | null>(null);   // audio 2: custo por dieta
+const aberta = ref<string | null>(null);         // dieta expandida no quadro
 const erro = ref("");
+const brl = (v: number | null) => (v === null ? "—" : `R$ ${v.toFixed(2)}`);
 
 const fmtData = (d: string) => d.split("-").reverse().join("/");
 const custoTone = (c: number) => (c <= META_CUSTO ? "OK" : "ALERTA");
@@ -25,7 +28,9 @@ async function carregar() {
   if (!fazendaId.value) return;
   erro.value = "";
   try {
-    [dietas.value, lotes.value] = await Promise.all([getDietas(fazendaId.value), getLotes(fazendaId.value)]);
+    [dietas.value, lotes.value, quadro.value] = await Promise.all([
+      getDietas(fazendaId.value), getLotes(fazendaId.value), getQuadroDietas(fazendaId.value),
+    ]);
   } catch (e) { erro.value = String(e instanceof Error ? e.message : e); }
 }
 async function init() {
@@ -102,7 +107,50 @@ async function remover(id: string) {
                :sub="`meta R$ ${META_CUSTO}`" emoji="🥗"
                :tone="custoAtiva === null ? 'blue' : (custoAtiva <= META_CUSTO ? 'primary' : 'danger')" />
       <KpiCard label="Dietas cadastradas" :value="dietas.length" sub="por lote" :icon="Utensils" tone="amber" />
+      <KpiCard v-if="quadro" label="Custo médio" :value="brl(quadro.custo_medio_ponderado ?? quadro.custo_medio)"
+               :sub="quadro.custo_medio_ponderado !== null ? 'ponderado por cabeça' : 'média das dietas'"
+               :icon="Coins" tone="blue" />
+      <KpiCard v-if="quadro" label="Custo total do dia" :value="brl(quadro.custo_total_dia)"
+               :sub="`${quadro.cabecas_atendidas} cabeças atendidas`" :icon="Users" tone="primary" />
     </div>
+
+    <!-- audio 2: "lanca o custo de cada dieta... e a gente faz o custo medio" -->
+    <Panel v-if="quadro && quadro.dietas.length" title="Quadro de custo por dieta"
+           sub="clique na dieta para ver o peso de cada insumo">
+      <div class="quadro">
+        <div v-for="d in quadro.dietas" :key="d.id" class="qitem">
+          <button class="qhead" @click="aberta = aberta === d.id ? null : d.id">
+            <ChevronRight :size="15" class="chev" :class="{ open: aberta === d.id }" />
+            <div class="qnome">
+              <b>{{ d.nome }}</b>
+              <span class="muted qsub">{{ d.lote_nome ?? "sem lote" }} · {{ d.cabecas }} cab</span>
+            </div>
+            <div class="qcusto">
+              <b :class="d.custo_cab_dia > META_CUSTO ? 'caro' : 'ok'">{{ brl(d.custo_cab_dia) }}</b>
+              <span class="muted qsub">/cab/dia</span>
+            </div>
+            <div class="qtotal">
+              <b class="tnum">{{ brl(d.custo_dia_lote) }}</b>
+              <span class="muted qsub">no lote/dia</span>
+            </div>
+          </button>
+
+          <div v-if="aberta === d.id" class="insumos">
+            <div v-for="i in d.insumos" :key="i.ingrediente" class="ins">
+              <div class="ins__l">
+                <span>{{ i.ingrediente }}</span>
+                <span class="muted">{{ i.inclusao_kg }} kg × {{ brl(i.preco_kg) }} = <b>{{ brl(i.custo_cab_dia) }}</b></span>
+              </div>
+              <div class="ins__t"><div class="ins__f" :style="{ width: `${(i.pct_custo ?? 0) * 100}%` }" /></div>
+            </div>
+            <p class="muted dica">Os insumos vêm ordenados do que mais pesa no custo para o que menos pesa.</p>
+          </div>
+        </div>
+      </div>
+      <p v-if="quadro.mais_cara && quadro.total_dietas > 1" class="muted resumo">
+        Mais cara: <b>{{ quadro.mais_cara }}</b> · Mais barata: <b>{{ quadro.mais_barata }}</b>
+      </p>
+    </Panel>
 
     <Panel title="Dietas" sub="custo calculado dos ingredientes">
       <template #actions>
@@ -172,6 +220,32 @@ async function remover(id: string) {
 </template>
 
 <style scoped>
+/* quadro de custo por dieta (audio 2) */
+.quadro { display: flex; flex-direction: column; gap: 8px; }
+.qitem { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.qhead { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 12px; align-items: center;
+  width: 100%; padding: 12px 14px; background: var(--surface); border: none; cursor: pointer;
+  text-align: left; font: inherit; color: inherit; }
+.qhead:hover { background: var(--bg); }
+.chev { transition: transform .15s; color: var(--muted); }
+.chev.open { transform: rotate(90deg); }
+.qnome, .qcusto, .qtotal { display: flex; flex-direction: column; gap: 2px; }
+.qcusto, .qtotal { text-align: right; }
+.qsub { font-size: 12px; }
+.caro { color: var(--danger); }
+.ok { color: var(--primary); }
+.insumos { padding: 12px 14px 14px 44px; border-top: 1px solid var(--border); background: var(--bg); }
+.ins { margin-bottom: 10px; }
+.ins__l { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 4px; flex-wrap: wrap; }
+.ins__t { height: 6px; background: var(--surface); border-radius: 999px; overflow: hidden; }
+.ins__f { height: 100%; background: var(--primary); border-radius: 999px; }
+.dica { font-size: 12px; margin-top: 10px; }
+.resumo { font-size: 13px; margin-top: 12px; }
+@media (max-width: 700px) {
+  .qhead { grid-template-columns: 18px 1fr; row-gap: 6px; }
+  .qcusto, .qtotal { grid-column: 2; text-align: left; flex-direction: row; gap: 6px; align-items: baseline; }
+  .insumos { padding-left: 14px; }
+}
 .selc { width: auto; min-width: 220px; appearance: auto; }
 .tbl-wrap { overflow-x: auto; }
 .tbl { width: 100%; min-width: 560px; border-collapse: collapse; table-layout: fixed; }
